@@ -1,8 +1,29 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
+
+const coiServiceWorkerPlugin = () => {
+  const src = readFileSync(resolve('node_modules/coi-serviceworker/coi-serviceworker.js'))
+  return {
+    name: 'coi-serviceworker',
+    configureServer(server: any) {
+      server.middlewares.use(
+        `${server.config.base}coi-serviceworker.js`,
+        (_: any, res: any) => {
+          res.setHeader('Content-Type', 'application/javascript')
+          res.end(src)
+        },
+      )
+    },
+    generateBundle(this: any) {
+      this.emitFile({ type: 'asset', fileName: 'coi-serviceworker.js', source: src })
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), coiServiceWorkerPlugin()],
   base: '/cardb/',
   server: {
     headers: {
@@ -17,17 +38,11 @@ export default defineConfig({
     format: 'es',
   },
   build: {
+    target: 'esnext',
     rollupOptions: {
       onwarn(warning, warn) {
-        // PGlite's nodefs.js imports Node.js built-ins (path, fs) which Vite
-        // stubs out in browser builds. NodeFS is only used with the 'file://'
-        // prefix; we always use 'opfs-ahp://', so this dead code is safe to ignore.
         if (warning.code === 'MISSING_EXPORT' && warning.message.includes('nodefs.js')) return
-
-        // PGlite uses eval() in its WASM loader. This is expected and unavoidable
-        // for WebAssembly packages — not a security risk in this context.
         if (warning.code === 'EVAL' && warning.id?.includes('@electric-sql/pglite')) return
-
         warn(warning)
       },
     },
