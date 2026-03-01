@@ -1,0 +1,4 @@
+title: Bad YAML
+nodes:
+  - handle: foo
+    fields: [this: is: invalid

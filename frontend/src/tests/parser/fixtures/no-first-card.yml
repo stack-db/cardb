@@ -1,0 +1,10 @@
+title: No first_card
+
+nodes:
+  - handle: first-node
+    fields:
+      name: First
+
+  - handle: second-node
+    fields:
+      name: Second

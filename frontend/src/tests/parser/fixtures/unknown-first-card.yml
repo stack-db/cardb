@@ -1,0 +1,11 @@
+title: Unknown first_card
+first_card: '@nobody'
+
+nodes:
+  - handle: alice
+    fields:
+      name: Alice
+
+  - handle: bob
+    fields:
+      name: Bob

@@ -1,0 +1,138 @@
+import { describe, it, expect } from 'vitest'
+import { zipSync, strToU8 } from 'fflate'
+import { loadStack, loadFromYamlString } from '../../stack/load'
+import { StackArchiveError, StackYamlError, StackHandleCollisionError } from '../../stack/errors'
+
+function makeStack(yamlText: string, extraFiles?: Record<string, Uint8Array>): Uint8Array {
+  const entries: Record<string, Uint8Array> = {
+    'stack.yml': strToU8(yamlText),
+    ...extraFiles,
+  }
+  return zipSync(entries)
+}
+
+describe('loadStack', () => {
+  it('loads a minimal valid stack', async () => {
+    const yaml = `
+title: Minimal
+nodes:
+  - handle: alice
+    fields: { name: Alice }
+    tags: [person]
+  - handle: bob
+    fields: { name: Bob }
+links:
+  - source: '@alice'
+    target: '@bob'
+    rel: knows
+`
+    const bytes = makeStack(yaml)
+    const stack = await loadStack(bytes)
+
+    expect(stack.title).toBe('Minimal')
+    expect(stack.nodes).toHaveLength(2)
+    expect(stack.nodes[0].handle).toBe('alice')
+    expect(stack.nodes[0].tags).toContain('person')
+    expect(stack.links).toHaveLength(1)
+    expect(stack.links[0].rel).toBe('knows')
+    expect(stack.links[0].source.handle).toBe('alice')
+    expect(stack.links[0].target.handle).toBe('bob')
+  })
+
+  it('throws StackArchiveError for invalid ZIP', async () => {
+    const notAZip = new Uint8Array([1, 2, 3, 4])
+    await expect(loadStack(notAZip)).rejects.toBeInstanceOf(StackArchiveError)
+  })
+
+  it('throws StackArchiveError when stack.yml missing', async () => {
+    const emptyZip = zipSync({ 'other.txt': strToU8('hello') })
+    await expect(loadStack(emptyZip)).rejects.toThrow('stack.yml not found')
+  })
+
+  it('throws StackYamlError for invalid YAML', async () => {
+    const bytes = makeStack('nodes: [')
+    await expect(loadStack(bytes)).rejects.toBeInstanceOf(StackYamlError)
+  })
+
+  it('handles empty nodes list', async () => {
+    const yaml = 'title: Empty\nnodes: []\n'
+    const bytes = makeStack(yaml)
+    const stack = await loadStack(bytes)
+    expect(stack.nodes).toHaveLength(0)
+    expect(stack.links).toHaveLength(0)
+  })
+
+  it('throws on duplicate handle', async () => {
+    const yaml = `
+nodes:
+  - handle: dup
+    fields: {}
+  - handle: dup
+    fields: {}
+`
+    const bytes = makeStack(yaml)
+    await expect(loadStack(bytes)).rejects.toBeInstanceOf(StackHandleCollisionError)
+  })
+
+  it('resolves first_card handle', async () => {
+    const yaml = `
+first_card: '@bob'
+nodes:
+  - handle: alice
+    fields: {}
+  - handle: bob
+    fields: {}
+`
+    const bytes = makeStack(yaml)
+    const stack = await loadStack(bytes)
+    expect(stack.firstCardHandle).toBe('bob')
+  })
+
+  it('collects embedded files from docs/', async () => {
+    const png = new Uint8Array([137, 80, 78, 71]) // PNG magic bytes
+    const yaml = `
+nodes:
+  - handle: alice
+    fields:
+      photo: '$.headshots/alice.png'
+`
+    const bytes = makeStack(yaml, { 'docs/headshots/alice.png': png })
+    const stack = await loadStack(bytes)
+    expect(stack.embeddedFiles.has('headshots/alice.png')).toBe(true)
+  })
+
+  it('resolves aliases in link references', async () => {
+    const yaml = `
+nodes:
+  - handle: alice
+    aliases: [al]
+    fields: {}
+  - handle: bob
+    fields: {}
+links:
+  - source: '@al'
+    target: '@bob'
+    rel: knows
+`
+    const bytes = makeStack(yaml)
+    const stack = await loadStack(bytes)
+    expect(stack.links[0].source.handle).toBe('alice')
+  })
+})
+
+describe('loadFromYamlString', () => {
+  it('parses plain YAML text (bundled stack path)', async () => {
+    const yaml = `
+title: Got
+nodes:
+  - handle: jon-snow
+    fields: { name: Jon Snow }
+    tags: [person]
+`
+    const stack = await loadFromYamlString(yaml, 'GraphOfThrones')
+    expect(stack.title).toBe('GraphOfThrones')
+    expect(stack.nodes).toHaveLength(1)
+    expect(stack.nodes[0].handle).toBe('jon-snow')
+    expect(stack.embeddedFiles.size).toBe(0)
+  })
+})

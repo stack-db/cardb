@@ -1,0 +1,18 @@
+title: Minimal Test Stack
+first_card: '@alice'
+
+nodes:
+  - handle: alice
+    fields:
+      name: Alice
+    tags:
+      - person
+
+  - handle: bob
+    fields:
+      name: Bob
+
+links:
+  - source: '@alice'
+    target: '@bob'
+    rel: knows

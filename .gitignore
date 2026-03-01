@@ -1,0 +1,39 @@
+.claude
+
+# Local environment overrides (never commit)
+.env.local
+
+# Docker Compose local overrides
+docker-compose.override.yml
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+.pytest_cache/
+
+# macOS
+.DS_Store
+
+# Not pushed to public repo
+backend/
+scripts/
+specs/
+docs/
+data/
+Makefile
+docker-compose.yml
+notes.md
+CLAUDE.md
+.env.example
+.specify/
+
+# Node.js / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.log

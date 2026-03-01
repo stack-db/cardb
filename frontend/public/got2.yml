@@ -1,0 +1,121 @@
+title: GraphOfThrones Extended
+first_card: '@oberyn-martell'
+
+nodes:
+  - handle: oberyn-martell
+    aliases: [red-viper]
+    fields:
+      name: Oberyn Martell
+      house: Martell
+      title: Prince of Dorne
+      status: Deceased
+      bio: >
+        Prince of Dorne and skilled fighter known as the Red Viper.
+        Came to King's Landing for the Purple Wedding and to seek
+        justice for his sister Elia's death.
+    tags: [person, prince, fighter]
+
+  - handle: ellaria-sand
+    fields:
+      name: Ellaria Sand
+      house: Martell
+      title: Paramour of Oberyn Martell
+      status: Deceased
+    tags: [person, martell]
+
+  - handle: dorne
+    fields:
+      name: Dorne
+      type: Kingdom
+      sigil: Sun and Spear
+      words: Unbowed, Unbent, Unbroken
+    tags: [location, kingdom]
+
+  - handle: the-eyrie
+    aliases: [eyrie]
+    fields:
+      name: The Eyrie
+      type: Castle
+      location: Vale of Arryn
+      description: Impregnable fortress in the Mountains of the Moon
+    tags: [location, castle]
+
+  - handle: lysa-tully
+    aliases: [lysa-arryn]
+    fields:
+      name: Lysa Tully
+      house: Tully
+      married_into: Arryn
+      status: Deceased
+    tags: [person, lady]
+
+  - handle: robin-arryn
+    aliases: [sweetrobin, robert-arryn]
+    fields:
+      name: Robin Arryn
+      house: Arryn
+      title: Lord of the Eyrie
+      status: Living
+    tags: [person, lord, child]
+
+  - handle: the-mountain
+    aliases: [gregor-clegane, ser-gregor]
+    fields:
+      name: Gregor Clegane
+      house: Clegane
+      title: Ser Gregor Clegane
+      status: Undead
+      height_ft: 8
+    tags: [person, knight, villain]
+
+  - handle: val
+    fields:
+      name: Val
+      title: Wildling Princess
+      status: Living
+    tags: [person, wildling, freefolk]
+
+  - handle: bloodraven
+    aliases: [three-eyed-raven, brynden-rivers]
+    fields:
+      name: Brynden Rivers
+      alias: Lord Bloodraven
+      status: Greenseer
+    tags: [person, greenseer, mystic]
+
+  - handle: battle-of-blackwater
+    fields:
+      name: Battle of the Blackwater
+      type: Battle
+      location: King's Landing
+      outcome: Lannister victory
+    tags: [event, battle]
+
+links:
+  - source: '@oberyn-martell'
+    target: '@dorne'
+    rel: rules
+
+  - source: '@ellaria-sand'
+    target: '@oberyn-martell'
+    rel: paramour-of
+
+  - source: '@oberyn-martell'
+    target: '@the-mountain'
+    rel: fought
+
+  - source: '@lysa-tully'
+    target: '@the-eyrie'
+    rel: rules
+
+  - source: '@robin-arryn'
+    target: '@the-eyrie'
+    rel: rules
+
+  - source: '@robin-arryn'
+    target: '@lysa-tully'
+    rel: child-of
+
+  - source: '@bloodraven'
+    target: '@val'
+    rel: knows
