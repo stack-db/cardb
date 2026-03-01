@@ -125,11 +125,25 @@ async function importStackDef(
 }
 
 // ---------------------------------------------------------------------------
+// Query-param stack (?stack=<url>)
+// ---------------------------------------------------------------------------
+
+function getQueryParamStack(): StackDef | null {
+  const url = new URLSearchParams(window.location.search).get('stack')
+  if (!url) return null
+  const label = url.split('/').pop()?.replace(/\.(yml|stack)$/, '') ?? 'Remote Stack'
+  return { id: `param-${url}`, label, source: { type: 'remote', url } }
+}
+
+const QUERY_PARAM_STACK: StackDef | null = getQueryParamStack()
+
+// ---------------------------------------------------------------------------
 // Initial state helpers
 // ---------------------------------------------------------------------------
 
 function buildInitialStacks(): StackDef[] {
-  return [...BUILTIN_STACKS, ...loadRemoteStacks()]
+  const base = [...BUILTIN_STACKS, ...loadRemoteStacks()]
+  return QUERY_PARAM_STACK ? [...base, QUERY_PARAM_STACK] : base
 }
 
 // ---------------------------------------------------------------------------
@@ -341,7 +355,9 @@ function CardContent({
 export function App() {
   const { db, dbStatus, dbError } = useDb()
   const [stacks, setStacks] = useState<StackDef[]>(buildInitialStacks)
-  const [activeStackId, setActiveStackId] = useState<string>(BUILTIN_STACKS[0].id)
+  const [activeStackId, setActiveStackId] = useState<string>(
+    QUERY_PARAM_STACK?.id ?? BUILTIN_STACKS[0].id,
+  )
   const [stackLoadStates, setStackLoadStates] = useState<Map<string, StackLoadState>>(new Map())
   const [stackPaneOpen, setStackPaneOpen] = useState(false)
   const [graphState, setGraphState] = useState<GraphState>({ status: 'loading' })
@@ -364,7 +380,7 @@ export function App() {
   // Step 1: Load from YAML immediately on mount — no waiting for DB
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    void loadYamlFast(BUILTIN_STACKS[0])
+    void loadYamlFast(QUERY_PARAM_STACK ?? BUILTIN_STACKS[0])
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadYamlFast(stackDef: StackDef) {
@@ -398,7 +414,7 @@ export function App() {
     // Check for a previously-selected stack in DB (returning user)
     const savedId = await getSelectedStackId(db)
 
-    if (savedId) {
+    if (savedId && !QUERY_PARAM_STACK) {
       // DB has a previously selected stack — switch to it
       try {
         const graph = await buildGraphFromDb(db, savedId)
