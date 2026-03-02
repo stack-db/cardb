@@ -9,13 +9,7 @@ interface StackPaneProps {
   onClose: () => void
 }
 
-export function StackPane({
-  stacks,
-  activeStackId,
-  isOpen,
-  onSelect,
-  onClose,
-}: StackPaneProps) {
+export function StackPane({ stacks, activeStackId, isOpen, onSelect, onClose }: StackPaneProps) {
   const navigate = useNavigate()
 
   const sourceLabel = (s: StackDef) => {
@@ -25,10 +19,7 @@ export function StackPane({
   }
 
   return (
-    <div
-      className={`stack-pane${isOpen ? ' stack-pane--open' : ''}`}
-      aria-hidden={!isOpen}
-    >
+    <div className={`stack-pane${isOpen ? ' stack-pane--open' : ''}`} aria-hidden={!isOpen}>
       <div className="stack-pane__list">
         {stacks.map((stack) => (
           <button

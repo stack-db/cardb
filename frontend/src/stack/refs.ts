@@ -5,11 +5,7 @@
  * Pass 2: Resolve all @name references in links. Raise on unresolved ref.
  */
 
-import {
-  StackHandleCollisionError,
-  StackUnresolvedRefError,
-  StackYamlError,
-} from './errors'
+import { StackHandleCollisionError, StackUnresolvedRefError, StackYamlError } from './errors'
 import type { ResolvedNode, ResolvedLink } from './load'
 
 // ---------------------------------------------------------------------------
@@ -26,8 +22,8 @@ export interface RawYmlNode {
 export interface RawYmlLink {
   handle?: string
   aliases?: string[]
-  source: string   // '@handle' bare string
-  target: string   // '@handle' bare string
+  source: string // '@handle' bare string
+  target: string // '@handle' bare string
   rel?: string
   fields?: Record<string, unknown>
   tags?: string[]

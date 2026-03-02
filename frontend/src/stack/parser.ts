@@ -6,9 +6,11 @@ import { LoadError, ParseError } from './errors'
 // Pass 1: Build handle index
 // ---------------------------------------------------------------------------
 
-function buildHandleIndex(
-  rawNodes: StackYml['nodes'],
-): { index: Map<string, NodeData>; firstHandle: string; orderedHandles: string[] } {
+function buildHandleIndex(rawNodes: StackYml['nodes']): {
+  index: Map<string, NodeData>
+  firstHandle: string
+  orderedHandles: string[]
+} {
   if (!rawNodes || rawNodes.length === 0) {
     throw new ParseError('Graph is empty — nodes list has no entries')
   }
@@ -31,9 +33,7 @@ function buildHandleIndex(
 
     // Register handle
     if (index.has(raw.handle)) {
-      throw new ParseError(
-        `Duplicate handle "${raw.handle}" — each node handle must be unique`,
-      )
+      throw new ParseError(`Duplicate handle "${raw.handle}" — each node handle must be unique`)
     }
     index.set(raw.handle, node)
     orderedHandles.push(raw.handle)
@@ -77,12 +77,8 @@ function resolveLinks(
 
   for (const raw of rawLinks) {
     // Strip the leading '@' from source/target
-    const sourceHandle = raw.source?.startsWith('@')
-      ? raw.source.slice(1)
-      : raw.source
-    const targetHandle = raw.target?.startsWith('@')
-      ? raw.target.slice(1)
-      : raw.target
+    const sourceHandle = raw.source?.startsWith('@') ? raw.source.slice(1) : raw.source
+    const targetHandle = raw.target?.startsWith('@') ? raw.target.slice(1) : raw.target
 
     const sourceNode = index.get(sourceHandle)
     const targetNode = index.get(targetHandle)
@@ -120,9 +116,7 @@ function resolveDefaultHandle(
   firstHandle: string,
 ): string {
   if (yml.first_card) {
-    const candidate = yml.first_card.startsWith('@')
-      ? yml.first_card.slice(1)
-      : yml.first_card
+    const candidate = yml.first_card.startsWith('@') ? yml.first_card.slice(1) : yml.first_card
     const node = index.get(candidate)
     if (node) return node.handle
     // Falls back to firstHandle silently
@@ -146,9 +140,7 @@ export function parseGraph(yamlText: string): ResolvedGraph {
   try {
     yml = parseYaml(yamlText) as StackYml
   } catch (err) {
-    throw new ParseError(
-      `Invalid YAML: ${err instanceof Error ? err.message : String(err)}`,
-    )
+    throw new ParseError(`Invalid YAML: ${err instanceof Error ? err.message : String(err)}`)
   }
 
   if (!yml || typeof yml !== 'object') {
@@ -181,9 +173,7 @@ export async function loadGraph(
   }
 
   const url =
-    stack.source.type === 'bundled'
-      ? `${baseUrl}${stack.source.filename}`
-      : stack.source.url
+    stack.source.type === 'bundled' ? `${baseUrl}${stack.source.filename}` : stack.source.url
 
   let text: string
   try {

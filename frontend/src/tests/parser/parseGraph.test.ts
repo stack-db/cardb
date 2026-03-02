@@ -6,8 +6,7 @@ import { parseGraph } from '../../stack/parser'
 import { ParseError } from '../../stack/errors'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const fixture = (name: string) =>
-  readFileSync(join(__dirname, 'fixtures', name), 'utf-8')
+const fixture = (name: string) => readFileSync(join(__dirname, 'fixtures', name), 'utf-8')
 
 describe('parseGraph', () => {
   it('parses minimal.yml: 2 nodes in index, 1 outgoing link, defaultHandle = alice', () => {
@@ -109,9 +108,7 @@ nodes:
     expect(graph.nodeIndex.has('lord-commander')).toBe(true)
     expect(graph.nodeIndex.has('aegon-targaryen')).toBe(true)
     // All three map to the same NodeData object
-    expect(graph.nodeIndex.get('lord-commander')).toBe(
-      graph.nodeIndex.get('jon-snow'),
-    )
+    expect(graph.nodeIndex.get('lord-commander')).toBe(graph.nodeIndex.get('jon-snow'))
   })
 
   it('throws ParseError when an alias collides with another handle', () => {

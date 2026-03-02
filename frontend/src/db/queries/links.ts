@@ -83,10 +83,7 @@ export async function listLinks(db: Db, stackId: string): Promise<LinkRecord[]> 
   return rows.map((row) => mapLinkRow(row, tagsByLinkId.get(row.id) ?? []))
 }
 
-export async function listLinksForNode(
-  db: Db,
-  nodeId: string,
-): Promise<LinkRecord[]> {
+export async function listLinksForNode(db: Db, nodeId: string): Promise<LinkRecord[]> {
   const { rows } = await db.query<LinkRow>(
     `SELECT id, stack_id, source_id, target_id, handle, aliases, rel, fields, position, created_at, updated_at
      FROM links WHERE source_id = $1 ORDER BY position`,

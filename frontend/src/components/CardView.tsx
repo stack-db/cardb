@@ -12,10 +12,14 @@ interface CardViewProps {
   showBack?: boolean
 }
 
-export function CardView({ node, linksByRel, nodeIndex, onNavigate, showBack = false }: CardViewProps) {
-  const relEntries = Array.from(linksByRel.entries()).sort(([a], [b]) =>
-    a.localeCompare(b),
-  )
+export function CardView({
+  node,
+  linksByRel,
+  nodeIndex,
+  onNavigate,
+  showBack = false,
+}: CardViewProps) {
+  const relEntries = Array.from(linksByRel.entries()).sort(([a], [b]) => a.localeCompare(b))
 
   const title = (() => {
     const v = node.fields['title'] ?? node.fields['name']

@@ -9,9 +9,9 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { Db } from '../db/index'
 
 export type DbStatus =
-  | 'initializing'  // worker starting, WASM loading
-  | 'ready'         // migrations applied, queries possible
-  | 'error'         // init failed; app continues in YAML-only mode
+  | 'initializing' // worker starting, WASM loading
+  | 'ready' // migrations applied, queries possible
+  | 'error' // init failed; app continues in YAML-only mode
 
 interface DbContextValue {
   db: Db | null
@@ -74,9 +74,7 @@ export function DbProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <DbContext.Provider
-      value={{ db, dbStatus, dbError, dbReady: dbStatus !== 'initializing' }}
-    >
+    <DbContext.Provider value={{ db, dbStatus, dbError, dbReady: dbStatus !== 'initializing' }}>
       {children}
     </DbContext.Provider>
   )

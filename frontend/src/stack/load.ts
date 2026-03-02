@@ -7,18 +7,8 @@
 
 import { unzipSync, strFromU8 } from 'fflate'
 import { parse as parseYaml } from 'yaml'
-import {
-  StackArchiveError,
-  StackYamlError,
-  StackMissingFileError,
-} from './errors'
-import {
-  buildHandleIndex,
-  resolveLinks,
-  isFileRef,
-  resolveFileRef,
-  type RawYml,
-} from './refs'
+import { StackArchiveError, StackYamlError, StackMissingFileError } from './errors'
+import { buildHandleIndex, resolveLinks, isFileRef, resolveFileRef, type RawYml } from './refs'
 import type { ResolvedGraph, NodeData, LinkData } from '../types'
 
 // ---------------------------------------------------------------------------
@@ -107,10 +97,7 @@ export async function loadStack(archiveBytes: Uint8Array): Promise<LoadedStack> 
  * Load a graph from a YAML string (for bundled stacks — no ZIP wrapping).
  * Embedded files are empty since bundled stacks don't use $.path refs.
  */
-export async function loadFromYamlString(
-  yamlText: string,
-  title: string,
-): Promise<LoadedStack> {
+export async function loadFromYamlString(yamlText: string, title: string): Promise<LoadedStack> {
   return loadFromYaml(yamlText, new Map(), title)
 }
 
@@ -190,14 +177,9 @@ function loadFromYaml(
 // Used when loading bundled YAML stacks via the legacy parser path.
 // ---------------------------------------------------------------------------
 
-export function resolvedGraphToLoadedStack(
-  graph: ResolvedGraph,
-  title: string,
-): LoadedStack {
+export function resolvedGraphToLoadedStack(graph: ResolvedGraph, title: string): LoadedStack {
   // Build node list from orderedHandles (dedup by handle — no aliases in list)
-  const nodeDataList: NodeData[] = graph.orderedHandles.map(
-    (h) => graph.nodeIndex.get(h)!,
-  )
+  const nodeDataList: NodeData[] = graph.orderedHandles.map((h) => graph.nodeIndex.get(h)!)
 
   // Map NodeData → ResolvedNode (same structure)
   const resolvedNodes: ResolvedNode[] = nodeDataList.map((n) => ({
@@ -207,9 +189,7 @@ export function resolvedGraphToLoadedStack(
     tags: n.tags,
   }))
 
-  const nodeByHandle = new Map<string, ResolvedNode>(
-    resolvedNodes.map((n) => [n.handle, n]),
-  )
+  const nodeByHandle = new Map<string, ResolvedNode>(resolvedNodes.map((n) => [n.handle, n]))
 
   // Map outgoing links to ResolvedLink[]
   const resolvedLinks: ResolvedLink[] = []

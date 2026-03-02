@@ -24,8 +24,7 @@ export function NavBar({
 }: NavBarProps) {
   const navigate = useNavigate()
 
-  const activeStackLabel =
-    (stacks.find((s) => s.id === activeStackId) ?? stacks[0]).label
+  const activeStackLabel = (stacks.find((s) => s.id === activeStackId) ?? stacks[0]).label
 
   // Close the stack pane when clicking outside the wrapper
   const wrapperRef = useRef<HTMLDivElement>(null)

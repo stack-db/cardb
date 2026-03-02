@@ -7,10 +7,7 @@ import { MIGRATIONS } from './migrations'
 export interface Db {
   // T is unconstrained so callers can use specific row-shape interfaces
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  query<T = Record<string, unknown>>(
-    sql: string,
-    params?: unknown[],
-  ): Promise<{ rows: T[] }>
+  query<T = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>
   exec(sql: string): Promise<{ rows: unknown[] }[]>
   transaction<T>(fn: (db: Db) => Promise<T>): Promise<T>
   close(): Promise<void>
@@ -81,7 +78,9 @@ async function _openDb(): Promise<Db> {
   const db = new PGliteWorker(workerInstance)
   await db.waitReady
   await applyMigrations(db as unknown as Db)
-  console.log(`[cardb/db] DB ready in ${(performance.now() - t0).toFixed(0)}ms total (worker+WASM+migrations)`)
+  console.log(
+    `[cardb/db] DB ready in ${(performance.now() - t0).toFixed(0)}ms total (worker+WASM+migrations)`,
+  )
   return db as unknown as Db
 }
 

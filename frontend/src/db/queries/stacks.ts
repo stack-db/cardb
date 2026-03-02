@@ -110,9 +110,9 @@ function buildMultiInsert(
 
 export type ImportProgressCallback = (pct: number) => void
 
-const NODE_CHUNK = 100  // rows per batch insert
+const NODE_CHUNK = 100 // rows per batch insert
 const LINK_CHUNK = 100
-const TAG_CHUNK  = 500  // PGlite hits an internal limit around 26k params; 500×2=1000 is safe
+const TAG_CHUNK = 500 // PGlite hits an internal limit around 26k params; 500×2=1000 is safe
 
 export async function importStack(
   db: Db,
@@ -175,7 +175,11 @@ export async function importStack(
 
     // Node tags — chunked to stay under PGlite's bind-parameter limit
     for (let i = 0; i < allNodeTagRows.length; i += TAG_CHUNK) {
-      const { sql, params } = buildMultiInsert('node_tags', ['node_id', 'tag'], allNodeTagRows.slice(i, i + TAG_CHUNK))
+      const { sql, params } = buildMultiInsert(
+        'node_tags',
+        ['node_id', 'tag'],
+        allNodeTagRows.slice(i, i + TAG_CHUNK),
+      )
       await tx.query(sql + ' ON CONFLICT DO NOTHING', params)
     }
     report(0.48)
@@ -186,7 +190,17 @@ export async function importStack(
       const slice = validLinks.slice(i, i + LINK_CHUNK)
       const { sql, params } = buildMultiInsert(
         'links',
-        ['id', 'stack_id', 'source_id', 'target_id', 'handle', 'aliases', 'rel', 'fields', 'position'],
+        [
+          'id',
+          'stack_id',
+          'source_id',
+          'target_id',
+          'handle',
+          'aliases',
+          'rel',
+          'fields',
+          'position',
+        ],
         slice.map((l, j) => [
           linkIds[i + j],
           stackId,
@@ -205,12 +219,16 @@ export async function importStack(
           allLinkTagRows.push([linkIds[i + j], tag])
         }
       }
-      report(0.50 + ((i + slice.length) / Math.max(1, validLinks.length)) * 0.45)
+      report(0.5 + ((i + slice.length) / Math.max(1, validLinks.length)) * 0.45)
     }
 
     // Link tags — chunked to stay under PGlite's bind-parameter limit
     for (let i = 0; i < allLinkTagRows.length; i += TAG_CHUNK) {
-      const { sql, params } = buildMultiInsert('link_tags', ['link_id', 'tag'], allLinkTagRows.slice(i, i + TAG_CHUNK))
+      const { sql, params } = buildMultiInsert(
+        'link_tags',
+        ['link_id', 'tag'],
+        allLinkTagRows.slice(i, i + TAG_CHUNK),
+      )
       await tx.query(sql + ' ON CONFLICT DO NOTHING', params)
     }
     report(0.97)

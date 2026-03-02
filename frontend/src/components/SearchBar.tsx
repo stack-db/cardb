@@ -124,12 +124,8 @@ export function SearchBar({ graph, onNavigate }: SearchBarProps) {
                 }}
               >
                 <span className="search-bar__result-label">{label}</span>
-                {typeTag && (
-                  <span className="search-bar__result-type">{typeTag}</span>
-                )}
-                {showHandle && (
-                  <span className="search-bar__result-handle">{node.handle}</span>
-                )}
+                {typeTag && <span className="search-bar__result-type">{typeTag}</span>}
+                {showHandle && <span className="search-bar__result-handle">{node.handle}</span>}
               </li>
             )
           })}

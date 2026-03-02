@@ -34,9 +34,7 @@ export function TagIndex({ graph }: TagIndexProps) {
             <li key={tag} className="tag-index__item">
               <Link to={`/tag/${encodeURIComponent(tag)}`} className="tag-index__link">
                 <span className="tag-index__name">{tag}</span>
-                <span className="tag-index__count">
-                  {tagMap.get(tag)!.toLocaleString()} nodes
-                </span>
+                <span className="tag-index__count">{tagMap.get(tag)!.toLocaleString()} nodes</span>
                 <i className="fa-solid fa-chevron-right tag-index__arrow" aria-hidden="true" />
               </Link>
             </li>

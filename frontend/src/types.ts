@@ -12,11 +12,11 @@ export interface RawNode {
 
 /** A link entry as parsed from stack.yml (before handle resolution). */
 export interface RawLink {
-  source: string           // '@handle' bare string
-  target: string           // '@handle' bare string
-  rel?: string             // relationship type label; defaults to 'related'
-  'reverse-rel'?: string   // rel label to use in the reverse direction (requires bidirectional)
-  bidirectional?: boolean  // if true, also display the inverse link on the target node
+  source: string // '@handle' bare string
+  target: string // '@handle' bare string
+  rel?: string // relationship type label; defaults to 'related'
+  'reverse-rel'?: string // rel label to use in the reverse direction (requires bidirectional)
+  bidirectional?: boolean // if true, also display the inverse link on the target node
   fields?: Record<string, unknown>
   tags?: string[]
 }
@@ -24,7 +24,7 @@ export interface RawLink {
 /** Top-level structure of a stack.yml file. */
 export interface StackYml {
   title?: string
-  first_card?: string  // '@handle' bare string; optional
+  first_card?: string // '@handle' bare string; optional
   nodes: RawNode[]
   links?: RawLink[]
 }
@@ -37,13 +37,13 @@ export interface StackYml {
 export interface NodeData {
   handle: string
   aliases: string[]
-  fields: Record<string, unknown>  // includes '$.path' strings (rendered as plain text)
+  fields: Record<string, unknown> // includes '$.path' strings (rendered as plain text)
   tags: string[]
 }
 
 /** A resolved outgoing link from a source node. */
 export interface LinkData {
-  rel: string          // relationship type (e.g. 'killedBy', 'appears-in')
+  rel: string // relationship type (e.g. 'killedBy', 'appears-in')
   targetHandle: string // resolved handle of the target node
 }
 

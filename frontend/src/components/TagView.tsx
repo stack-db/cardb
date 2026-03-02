@@ -48,9 +48,7 @@ export function TagView({ graph }: TagViewProps) {
               <li key={node.handle} className="tag-view__item">
                 <Link to={`/node/${node.handle}`} className="tag-view__link">
                   <span className="tag-view__label">{label}</span>
-                  {showHandle && (
-                    <span className="tag-view__handle">{node.handle}</span>
-                  )}
+                  {showHandle && <span className="tag-view__handle">{node.handle}</span>}
                 </Link>
               </li>
             )

@@ -4,7 +4,11 @@ interface FieldListProps {
 
 function renderValue(value: unknown): React.ReactNode {
   if (typeof value === 'string' && value.startsWith('$.')) {
-    return <em className="field-file-ref" title="Embedded file reference">{value}</em>
+    return (
+      <em className="field-file-ref" title="Embedded file reference">
+        {value}
+      </em>
+    )
   }
   if (value === null || value === undefined) {
     return <span className="field-empty">—</span>

@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
-import {
-  Routes,
-  Route,
-  Navigate,
-  useParams,
-  useNavigate,
-  useLocation,
-} from 'react-router-dom'
+import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import type { ResolvedGraph, NodeData, LinkData } from './types'
 import { loadGraph, parseGraph } from './stack/parser'
 import { loadStack, resolvedGraphToLoadedStack } from './stack/load'
@@ -48,10 +41,7 @@ type GraphState =
 // ---------------------------------------------------------------------------
 
 async function buildGraphFromDb(db: Db, dbStackId: string): Promise<ResolvedGraph> {
-  const [nodes, links] = await Promise.all([
-    listNodes(db, dbStackId),
-    listLinks(db, dbStackId),
-  ])
+  const [nodes, links] = await Promise.all([listNodes(db, dbStackId), listLinks(db, dbStackId)])
 
   const nodeById = new Map(nodes.map((n) => [n.id, n]))
 
@@ -131,7 +121,11 @@ async function importStackDef(
 function getQueryParamStack(): StackDef | null {
   const url = new URLSearchParams(window.location.search).get('stack')
   if (!url) return null
-  const label = url.split('/').pop()?.replace(/\.(yml|stack)$/, '') ?? 'Remote Stack'
+  const label =
+    url
+      .split('/')
+      .pop()
+      ?.replace(/\.(yml|stack)$/, '') ?? 'Remote Stack'
   return { id: `param-${url}`, label, source: { type: 'remote', url } }
 }
 
@@ -241,10 +235,7 @@ function AppShell({
 
       <main className="app-main">
         <Routes>
-          <Route
-            path="/"
-            element={<Navigate to={`/node/${graph.defaultHandle}`} replace />}
-          />
+          <Route path="/" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
           <Route
             path="/node/:handle"
             element={
@@ -275,10 +266,7 @@ function AppShell({
               />
             }
           />
-          <Route
-            path="*"
-            element={<Navigate to={`/node/${graph.defaultHandle}`} replace />}
-          />
+          <Route path="*" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
         </Routes>
       </main>
     </div>
@@ -309,15 +297,12 @@ function CardContent({
 
   const linksByRel = useMemo<Map<string, LinkData[]>>(() => {
     if (!node) return new Map()
-    return (graph.outgoingLinks.get(node.handle) ?? []).reduce(
-      (acc, link) => {
-        const list = acc.get(link.rel) ?? []
-        list.push(link)
-        acc.set(link.rel, list)
-        return acc
-      },
-      new Map<string, LinkData[]>(),
-    )
+    return (graph.outgoingLinks.get(node.handle) ?? []).reduce((acc, link) => {
+      const list = acc.get(link.rel) ?? []
+      list.push(link)
+      acc.set(link.rel, list)
+      return acc
+    }, new Map<string, LinkData[]>())
   }, [node, graph.outgoingLinks])
 
   if (!node) {
@@ -455,9 +440,7 @@ export function App() {
       const elapsed = (performance.now() - t0).toFixed(0)
       console.log(`[cardb/db] Imported "${stackDef.label}" to DB in ${elapsed}ms`)
       // Update dbStackId in graphState without re-rendering the graph
-      setGraphState((prev) =>
-        prev.status === 'loaded' ? { ...prev, dbStackId } : prev,
-      )
+      setGraphState((prev) => (prev.status === 'loaded' ? { ...prev, dbStackId } : prev))
     } catch (err) {
       console.warn('[cardb/db] Background import failed:', err)
     } finally {

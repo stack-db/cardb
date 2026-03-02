@@ -24,9 +24,7 @@ export function LinkGroup({ rel, links, nodeIndex, onNavigate }: LinkGroupProps)
                   {link.targetHandle}
                 </button>
               ) : (
-                <span className="link-group__target--missing">
-                  {link.targetHandle}
-                </span>
+                <span className="link-group__target--missing">{link.targetHandle}</span>
               )}
             </li>
           )

@@ -37,10 +37,22 @@ export function StacksPage({
   const [confirmText, setConfirmText] = useState('')
   const confirmed = confirmText === 'delete this'
 
-  const openRemoveModal = (id: string) => { setPendingRemoveId(id); setConfirmText('') }
-  const closeRemoveModal = () => { setPendingRemoveId(null); setConfirmText('') }
-  const openResetModal = () => { setResetModalOpen(true); setConfirmText('') }
-  const closeResetModal = () => { setResetModalOpen(false); setConfirmText('') }
+  const openRemoveModal = (id: string) => {
+    setPendingRemoveId(id)
+    setConfirmText('')
+  }
+  const closeRemoveModal = () => {
+    setPendingRemoveId(null)
+    setConfirmText('')
+  }
+  const openResetModal = () => {
+    setResetModalOpen(true)
+    setConfirmText('')
+  }
+  const closeResetModal = () => {
+    setResetModalOpen(false)
+    setConfirmText('')
+  }
 
   const getState = (stack: StackDef): StackLoadState =>
     stack.id === activeStackId ? 'loaded' : (stackLoadStates.get(stack.id) ?? 'unloaded')
@@ -138,10 +150,7 @@ export function StacksPage({
           style={{ display: 'none' }}
           onChange={(e) => void handleFileChange(e)}
         />
-        <button
-          className="stacks-page__action-btn"
-          onClick={() => fileInputRef.current?.click()}
-        >
+        <button className="stacks-page__action-btn" onClick={() => fileInputRef.current?.click()}>
           <i className="fa-solid fa-folder-open" aria-hidden="true" />
           Open local file
         </button>

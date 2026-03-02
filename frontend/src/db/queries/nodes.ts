@@ -87,7 +87,10 @@ export async function getNode(db: Db, nodeId: string): Promise<NodeRecord | null
     'SELECT tag FROM node_tags WHERE node_id = $1',
     [nodeId],
   )
-  return mapNodeRow(rows[0], tagRows.map((t) => t.tag))
+  return mapNodeRow(
+    rows[0],
+    tagRows.map((t) => t.tag),
+  )
 }
 
 export async function getNodeByHandle(
@@ -106,14 +109,13 @@ export async function getNodeByHandle(
     'SELECT tag FROM node_tags WHERE node_id = $1',
     [rows[0].id],
   )
-  return mapNodeRow(rows[0], tagRows.map((t) => t.tag))
+  return mapNodeRow(
+    rows[0],
+    tagRows.map((t) => t.tag),
+  )
 }
 
-export async function searchNodes(
-  db: Db,
-  stackId: string,
-  query: string,
-): Promise<NodeRecord[]> {
+export async function searchNodes(db: Db, stackId: string, query: string): Promise<NodeRecord[]> {
   const pattern = `%${query}%`
   const { rows } = await db.query<NodeRow>(
     `SELECT id, stack_id, handle, aliases, fields, position, created_at, updated_at

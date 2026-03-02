@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.3.15",
@@ -26,6 +28,7 @@
     "@vitejs/plugin-react": "^4.3.4",
     "coi-serviceworker": "^0.1.7",
     "happy-dom": "^20.7.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.7.3",
     "vite": "^6.1.0",
     "vitest": "^3.0.5"

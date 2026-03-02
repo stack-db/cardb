@@ -1,0 +1,91 @@
+title: About stackdb
+first_card: "@about"
+
+nodes:
+  - handle: about
+    fields:
+      name: About stackdb
+      text: >
+        A stack file for knowledge graphs is like a CSV file for spreadsheets.
+        It's a simple way to save knowledge in a file you can share.
+
+        Each card is an idea.
+        You can put thousands of ideas in a single stack.
+
+        The cards in a stack are connected by links.
+
+        A stack can hold any kind of data or knowledge.
+        Some people use them to store ontologies.
+        Others use them to store recipies or contacts in an address book.
+
+  - handle: n001
+    fields:
+      name: Knowledge
+      text: >
+        Stacks are a great way to share knowledge among humans and LLMs.
+        They're easy to read for both humans and LLMs.
+
+        Sometimes you can use markdown files to share knowledge
+        among humans and LLMs, but at some point you might
+        want a little more structure.
+
+        You can extend stacks by adding more stacks.
+
+  - handle: n002
+    fields:
+      name: Secure and local
+      text: >
+
+        You don't need an account to create, use, and share a stack.
+        This web app, for example, runs entirely in your local browser.
+        Any edits you make are saved on your local disk.
+        They're not uploaded anywhere unless you want them to be.
+
+        And it's shareware, so there are no usage limits or fees.
+
+  - handle: n003
+    fields:
+      name: Extensible
+      text: >
+
+        Do you remember Hypercard? We do.
+        You can add buttons, text, and images to your stacks.
+        You can even add code (coming soon).
+
+  - handle: n004
+    fields:
+      name: Demos
+      text: >
+
+        Here are some stacks for you to try:
+          
+        * A TV show: Graph of Thrones
+        https://stackdb.org/cardb/?stack=https://raw.githubusercontent.com/stack-db/cardb/refs/heads/main/frontend/public/got.yml
+
+        * A medical database: Medline
+        https://stackdb.org/cardb/?stack=https://raw.githubusercontent.com/stack-db/cardb/refs/heads/main/frontend/public/medline.yml
+
+links:
+  - source: "@about"
+    target: "@n001"
+    bidirectional: true
+    rel: next
+    reverse-rel: prev
+
+  - source: "@n001"
+    target: "@n002"
+    bidirectional: true
+    rel: next
+    reverse-rel: prev
+
+  - source: "@n002"
+    target: "@n003"
+    bidirectional: true
+    rel: next
+    reverse-rel: prev
+
+  - source: "@n003"
+    target: "@n004"
+    bidirectional: true
+    rel: next
+    reverse-rel: prev

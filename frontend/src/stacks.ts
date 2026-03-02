@@ -10,12 +10,12 @@ export interface StackDef {
 }
 
 export const BUILTIN_STACKS: StackDef[] = [
-  { id: 'got', label: 'GraphOfThrones', source: { type: 'bundled', filename: 'got.yml' } },
   {
-    id: 'got2',
-    label: 'GraphOfThrones (Extended)',
-    source: { type: 'bundled', filename: 'got2.yml' },
+    id: 'about',
+    label: 'About stackdb',
+    source: { type: 'bundled', filename: 'about.yml' },
   },
+  { id: 'got', label: 'GraphOfThrones', source: { type: 'bundled', filename: 'got.yml' } },
   { id: 'medline', label: 'MedlinePlus', source: { type: 'bundled', filename: 'medline.yml' } },
 ]
 

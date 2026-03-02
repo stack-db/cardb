@@ -21,11 +21,7 @@ export function CardBack({ node, linksByRel, onNavigate }: CardBackProps) {
             <span className="card-back__meta-key">tags</span>
             <span className="card-back__meta-val card-back__meta-tags">
               {node.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  to={`/tag/${encodeURIComponent(tag)}`}
-                  className="tag-chip"
-                >
+                <Link key={tag} to={`/tag/${encodeURIComponent(tag)}`} className="tag-chip">
                   {tag}
                 </Link>
               ))}
@@ -50,9 +46,7 @@ export function CardBack({ node, linksByRel, onNavigate }: CardBackProps) {
               <tr key={key} className="card-back__field-row">
                 <td className="card-back__field-key">{key}</td>
                 <td className="card-back__field-val">
-                  {Array.isArray(val)
-                    ? val.join(', ')
-                    : String(val ?? '')}
+                  {Array.isArray(val) ? val.join(', ') : String(val ?? '')}
                 </td>
               </tr>
             ))}

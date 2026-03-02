@@ -8,10 +8,7 @@ import { getStack } from './stacks'
 import { listNodes } from './nodes'
 import { listLinks } from './links'
 
-export async function exportStackToMemory(
-  db: Db,
-  stackId: string,
-): Promise<LoadedStack> {
+export async function exportStackToMemory(db: Db, stackId: string): Promise<LoadedStack> {
   const [stackRecord, nodes, links] = await Promise.all([
     getStack(db, stackId),
     listNodes(db, stackId),
