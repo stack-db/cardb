@@ -7,15 +7,23 @@ interface StackPaneProps {
   isOpen: boolean
   onSelect: (stackId: string) => void
   onClose: () => void
+  modifiedStackNames: Set<string>
 }
 
-export function StackPane({ stacks, activeStackId, isOpen, onSelect, onClose }: StackPaneProps) {
+export function StackPane({
+  stacks,
+  activeStackId,
+  isOpen,
+  onSelect,
+  onClose,
+  modifiedStackNames,
+}: StackPaneProps) {
   const navigate = useNavigate()
 
   const sourceLabel = (s: StackDef) => {
-    if (s.source.type === 'bundled') return 'built-in'
     if (s.source.type === 'remote') return 'remote'
-    return 'local'
+    if (s.source.type === 'local') return 'local'
+    return null
   }
 
   return (
@@ -31,7 +39,12 @@ export function StackPane({ stacks, activeStackId, isOpen, onSelect, onClose }: 
               <i className="fa-solid fa-check stack-pane__item-check" aria-hidden="true" />
             )}
             <span className="stack-pane__item-label">{stack.label}</span>
-            <span className="stack-pane__item-source">{sourceLabel(stack)}</span>
+            {modifiedStackNames.has(stack.label) && (
+              <span className="stack-pane__item-modified">modified</span>
+            )}
+            {sourceLabel(stack) && (
+              <span className="stack-pane__item-source">{sourceLabel(stack)}</span>
+            )}
           </button>
         ))}
       </div>

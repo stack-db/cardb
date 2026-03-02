@@ -20,3 +20,19 @@ export async function clearSelectedStack(db: Db): Promise<void> {
     "INSERT INTO app_state (key, value) VALUES ('selected_stack_id', '') ON CONFLICT (key) DO UPDATE SET value = ''",
   )
 }
+
+export async function touchDbModified(db: Db): Promise<void> {
+  const now = new Date().toISOString()
+  await db.query(
+    "INSERT INTO app_state (key, value) VALUES ('last_db_modified', $1) ON CONFLICT (key) DO UPDATE SET value = $1",
+    [now],
+  )
+}
+
+export async function getLastDbModified(db: Db): Promise<string | null> {
+  const { rows } = await db.query<{ value: string }>(
+    "SELECT value FROM app_state WHERE key = 'last_db_modified'",
+  )
+  const val = rows[0]?.value ?? ''
+  return val === '' ? null : val
+}

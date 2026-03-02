@@ -1,5 +1,6 @@
 import type { Db } from '../index'
 import type { LoadedStack } from '../../stack/load'
+import { touchDbModified } from './appState'
 
 // ---------------------------------------------------------------------------
 // Record types
@@ -10,6 +11,8 @@ export interface StackRecord {
   name: string
   sourceUrl: string | null
   firstCardHandle: string | null
+  fileChecksum: string | null
+  isModified: boolean
   createdAt: string
   updatedAt: string
 }
@@ -23,9 +26,14 @@ interface StackRow {
   name: string
   source_url: string | null
   first_card_handle: string | null
+  file_checksum: string | null
+  is_modified: boolean
   created_at: string
   updated_at: string
 }
+
+const STACK_COLUMNS =
+  'id, name, source_url, first_card_handle, file_checksum, is_modified, created_at, updated_at'
 
 function mapStackRow(row: StackRow): StackRecord {
   return {
@@ -33,6 +41,8 @@ function mapStackRow(row: StackRow): StackRecord {
     name: row.name,
     sourceUrl: row.source_url,
     firstCardHandle: row.first_card_handle,
+    fileChecksum: row.file_checksum,
+    isModified: row.is_modified,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -44,29 +54,67 @@ function mapStackRow(row: StackRow): StackRecord {
 
 export async function listStacks(db: Db): Promise<StackRecord[]> {
   const { rows } = await db.query<StackRow>(
-    'SELECT id, name, source_url, first_card_handle, created_at, updated_at FROM stacks ORDER BY created_at',
+    `SELECT ${STACK_COLUMNS} FROM stacks ORDER BY created_at`,
   )
   return rows.map(mapStackRow)
 }
 
 export async function getStack(db: Db, stackId: string): Promise<StackRecord | null> {
-  const { rows } = await db.query<StackRow>(
-    'SELECT id, name, source_url, first_card_handle, created_at, updated_at FROM stacks WHERE id = $1',
-    [stackId],
-  )
+  const { rows } = await db.query<StackRow>(`SELECT ${STACK_COLUMNS} FROM stacks WHERE id = $1`, [
+    stackId,
+  ])
   return rows[0] ? mapStackRow(rows[0]) : null
 }
 
 export async function getStackByName(db: Db, name: string): Promise<StackRecord | null> {
+  const { rows } = await db.query<StackRow>(`SELECT ${STACK_COLUMNS} FROM stacks WHERE name = $1`, [
+    name,
+  ])
+  return rows[0] ? mapStackRow(rows[0]) : null
+}
+
+export async function findStackByChecksum(db: Db, checksum: string): Promise<StackRecord | null> {
   const { rows } = await db.query<StackRow>(
-    'SELECT id, name, source_url, first_card_handle, created_at, updated_at FROM stacks WHERE name = $1',
-    [name],
+    `SELECT ${STACK_COLUMNS} FROM stacks WHERE file_checksum = $1 LIMIT 1`,
+    [checksum],
   )
   return rows[0] ? mapStackRow(rows[0]) : null
 }
 
 export async function deleteStack(db: Db, stackId: string): Promise<void> {
   await db.query('DELETE FROM stacks WHERE id = $1', [stackId])
+}
+
+export async function markStackModified(db: Db, stackId: string): Promise<void> {
+  await db.query('UPDATE stacks SET is_modified = TRUE, updated_at = now() WHERE id = $1', [
+    stackId,
+  ])
+  await touchDbModified(db)
+}
+
+export async function clearStackModified(db: Db, stackId: string): Promise<void> {
+  await db.query('UPDATE stacks SET is_modified = FALSE, updated_at = now() WHERE id = $1', [
+    stackId,
+  ])
+}
+
+export async function listModifiedStacks(db: Db): Promise<StackRecord[]> {
+  const { rows } = await db.query<StackRow>(
+    `SELECT ${STACK_COLUMNS} FROM stacks WHERE is_modified = TRUE`,
+  )
+  return rows.map(mapStackRow)
+}
+
+// ---------------------------------------------------------------------------
+// Checksum
+// ---------------------------------------------------------------------------
+
+export async function computeChecksum(data: string | Uint8Array): Promise<string> {
+  const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data
+  const hashBuffer = await crypto.subtle.digest('SHA-256', bytes.buffer as ArrayBuffer)
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 // ---------------------------------------------------------------------------
@@ -119,6 +167,7 @@ export async function importStack(
   stack: LoadedStack,
   sourceUrl?: string,
   onProgress?: ImportProgressCallback,
+  fileChecksum?: string,
 ): Promise<StackRecord> {
   const report = (pct: number) => onProgress?.(Math.min(1, Math.max(0, pct)))
 
@@ -143,8 +192,15 @@ export async function importStack(
   await db.transaction(async (tx) => {
     // --- Stack row ---
     await tx.query(
-      `INSERT INTO stacks (id, name, source_url, first_card_handle) VALUES ($1, $2, $3, $4)`,
-      [stackId, stack.title, sourceUrl ?? null, stack.firstCardHandle ?? null],
+      `INSERT INTO stacks (id, name, source_url, first_card_handle, file_checksum)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [
+        stackId,
+        stack.title,
+        sourceUrl ?? null,
+        stack.firstCardHandle ?? null,
+        fileChecksum ?? null,
+      ],
     )
     report(0.02)
 
@@ -246,6 +302,7 @@ export async function importStack(
     report(1.0)
   })
 
+  await touchDbModified(db)
   const record = await getStack(db, stackId)
   return record!
 }

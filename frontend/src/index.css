@@ -15,7 +15,7 @@ html {
 }
 
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Roboto', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
   color: #1a1a1a;
   background: #f0f2f5;
@@ -102,7 +102,13 @@ body {
   min-width: 0;
 }
 
-
+/* Modified dot — sits between the layers icon and stack name inside the stack button */
+.nav-bar__modified-dot {
+  color: orange;
+  font-size: 0.45rem;
+  flex-shrink: 0;
+  cursor: pointer;
+}
 
 /* -----------------------------------------------------------------------
    Search bar
@@ -317,7 +323,7 @@ body {
 }
 
 .stack-pane__item-label {
-  font-weight: 600;
+  font-weight: 400;
   color: #1a1a1a;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -339,6 +345,16 @@ body {
 .stack-pane__item--active .stack-pane__item-source {
   background: #dde7ff;
   color: #1a56db;
+}
+
+.stack-pane__item-modified {
+  font-size: 0.72rem;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 99px;
+  padding: 0.1rem 0.45rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .stack-pane__remove-btn {
@@ -399,8 +415,9 @@ body {
 
 .stacks-page__header {
   display: flex;
-  align-items: center;
-  gap: 1rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
   margin-bottom: 1.25rem;
 }
 
@@ -423,6 +440,69 @@ body {
   font-size: 1.3rem;
   font-weight: 700;
   color: #1a1a1a;
+}
+
+.stacks-page__backup-setting {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1rem;
+  background: #f5f5f5;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.stacks-page__backup-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.stacks-page__backup-value {
+  flex: 1;
+  color: #1a1a1a;
+}
+
+.stacks-page__backup-none {
+  color: #888;
+  font-style: italic;
+}
+
+.stacks-page__backup-time {
+  color: #666;
+  font-size: 0.8rem;
+}
+
+.stacks-page__backup-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+}
+
+.stacks-page__backup-btn {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  color: #333;
+}
+
+.stacks-page__backup-btn:hover {
+  background: #e8e8e8;
+}
+
+.stacks-page__backup-btn--clear {
+  padding: 0.25rem 0.45rem;
+  color: #666;
 }
 
 .stacks-page__actions {
@@ -517,7 +597,7 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem 0.25rem;
+  padding: 0.4rem 0.25rem;
   border-bottom: 1px solid #f0f0f0;
 }
 
@@ -529,8 +609,9 @@ body {
   flex: 1;
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
   text-align: left;
   background: transparent;
   border: none;
@@ -594,6 +675,11 @@ body {
 .stacks-page__badge--error {
   background: #fff3f3;
   color: #c0392b;
+}
+
+.stacks-page__badge--modified {
+  background: #fef3c7;
+  color: #92400e;
 }
 
 .stacks-page__item-export {

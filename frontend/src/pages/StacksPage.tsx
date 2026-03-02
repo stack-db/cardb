@@ -12,6 +12,11 @@ interface StacksPageProps {
   onAddRemote: (label: string, url: string) => void
   onRemoveStack: (id: string) => void
   onExportStack: () => void
+  modifiedStackNames: Set<string>
+  backupFolderName: string | null
+  lastBackupTime: number
+  onChooseBackupFolder: () => void
+  onClearBackupFolder: () => void
 }
 
 export function StacksPage({
@@ -24,6 +29,11 @@ export function StacksPage({
   onAddRemote,
   onRemoveStack,
   onExportStack,
+  modifiedStackNames,
+  backupFolderName,
+  lastBackupTime,
+  onChooseBackupFolder,
+  onClearBackupFolder,
 }: StacksPageProps) {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -111,9 +121,9 @@ export function StacksPage({
   }
 
   const sourceLabel = (s: StackDef) => {
-    if (s.source.type === 'bundled') return 'built-in'
     if (s.source.type === 'remote') return 'remote'
-    return 'local'
+    if (s.source.type === 'local') return 'local'
+    return null
   }
 
   const stateLabel = (state: StackLoadState, isActive: boolean) => {
@@ -151,7 +161,7 @@ export function StacksPage({
           onChange={(e) => void handleFileChange(e)}
         />
         <button className="stacks-page__action-btn" onClick={() => fileInputRef.current?.click()}>
-          <i className="fa-solid fa-folder-open" aria-hidden="true" />
+          <i className="fa-solid fa-file-invoice" aria-hidden="true" />
           Open local file
         </button>
         <button
@@ -201,6 +211,50 @@ export function StacksPage({
         </div>
       )}
 
+      <div className="stacks-page__backup-setting">
+        <span className="stacks-page__backup-label">
+          <i className="fa-solid fa-folder-arrow-up" aria-hidden="true" />
+          Backup folder
+        </span>
+        <span className="stacks-page__backup-value">
+          {backupFolderName ? (
+            <>
+              <strong title={backupFolderName}>{backupFolderName}</strong>
+              {lastBackupTime > 0 && (
+                <span className="stacks-page__backup-time">
+                  {' · backed up '}
+                  {new Date(lastBackupTime).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="stacks-page__backup-none">no backups</span>
+          )}
+        </span>
+        <div className="stacks-page__backup-actions">
+          <button
+            className="stacks-page__backup-btn"
+            onClick={onChooseBackupFolder}
+            title="Choose backup folder"
+          >
+            {backupFolderName ? 'Change' : 'Choose'}
+          </button>
+          {backupFolderName && (
+            <button
+              className="stacks-page__backup-btn stacks-page__backup-btn--clear"
+              onClick={onClearBackupFolder}
+              aria-label="Remove backup folder"
+              title="Remove backup folder"
+            >
+              <i className="fa-solid fa-xmark" aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </div>
+
       <ul className="stacks-page__list">
         {stacks.map((stack) => {
           const isActive = stack.id === activeStackId
@@ -224,14 +278,21 @@ export function StacksPage({
               >
                 <span className="stacks-page__item-name">{stack.label}</span>
                 <div className="stacks-page__item-badges">
-                  <span className="stacks-page__badge stacks-page__badge--source">
-                    {sourceLabel(stack)}
-                  </span>
+                  {sourceLabel(stack) && (
+                    <span className="stacks-page__badge stacks-page__badge--source">
+                      {sourceLabel(stack)}
+                    </span>
+                  )}
                   <span
                     className={`stacks-page__badge stacks-page__badge--${isActive ? 'loaded' : state}`}
                   >
                     {stateLbl}
                   </span>
+                  {modifiedStackNames.has(stack.label) && (
+                    <span className="stacks-page__badge stacks-page__badge--modified">
+                      modified
+                    </span>
+                  )}
                 </div>
               </button>
               {canExport && (

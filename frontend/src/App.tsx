@@ -13,10 +13,27 @@ import {
   type StackLoadState,
 } from './stacks'
 import { useDb } from './contexts/DbContext'
-import { importStack, getStackByName, type ImportProgressCallback } from './db/queries/stacks'
+import {
+  importStack,
+  getStackByName,
+  findStackByChecksum,
+  computeChecksum,
+  deleteStack,
+  listModifiedStacks,
+  type ImportProgressCallback,
+} from './db/queries/stacks'
 import { listNodes } from './db/queries/nodes'
 import { listLinks } from './db/queries/links'
 import { getSelectedStackId, setSelectedStack } from './db/queries/appState'
+import {
+  getSavedDirectoryHandle,
+  getLastBackupTime,
+  canAutoBackup,
+  requestBackupPermission,
+  pickDirectoryHandle,
+  backupModifiedStacks,
+  clearSavedDirectoryHandle,
+} from './backup'
 import { CardControls } from './components/CardControls'
 import { CardView } from './components/CardView'
 import { NavBar } from './components/NavBar'
@@ -35,6 +52,12 @@ type GraphState =
   | { status: 'loading' }
   | { status: 'error'; message: string; detail?: string }
   | { status: 'loaded'; graph: ResolvedGraph; dbStackId: string | null }
+
+// Collision: a file being loaded matches an existing modified stack's checksum
+type CollisionState = {
+  label: string
+  resolve: (result: 'cancel' | 'replace' | 'backup-replace') => void
+}
 
 // ---------------------------------------------------------------------------
 // Build a ResolvedGraph from DB records
@@ -90,6 +113,8 @@ async function importStackDef(
   baseUrl: string,
   fileBytes?: Uint8Array,
   onProgress?: ImportProgressCallback,
+  fileChecksum?: string,
+  preloadedText?: string,
 ): Promise<string> {
   let loaded
 
@@ -97,6 +122,9 @@ async function importStackDef(
     loaded = await loadStack(fileBytes)
   } else if (stackDef.source.type === 'local') {
     const graph = parseGraph(stackDef.source.content)
+    loaded = resolvedGraphToLoadedStack(graph, stackDef.label)
+  } else if (preloadedText) {
+    const graph = parseGraph(preloadedText)
     loaded = resolvedGraphToLoadedStack(graph, stackDef.label)
   } else {
     const graph = await loadGraph(baseUrl, stackDef)
@@ -110,6 +138,7 @@ async function importStackDef(
       ? (stackDef.source as { type: 'remote'; url: string }).url
       : undefined,
     onProgress,
+    fileChecksum,
   )
   return record.id
 }
@@ -159,6 +188,12 @@ function AppShell({
   onAddRemote,
   onRemoveStack,
   onExportStack,
+  modifiedStackNames,
+  backupFolderName,
+  lastBackupTime,
+  onBackup,
+  onChooseBackupFolder,
+  onClearBackupFolder,
 }: {
   graph: ResolvedGraph
   stacks: StackDef[]
@@ -174,6 +209,12 @@ function AppShell({
   onAddRemote: (label: string, url: string) => void
   onRemoveStack: (id: string) => void
   onExportStack: () => void
+  modifiedStackNames: Set<string>
+  backupFolderName: string | null
+  lastBackupTime: number
+  onBackup: () => void
+  onChooseBackupFolder: () => void
+  onClearBackupFolder: () => void
 }) {
   const navigate = useNavigate()
   const location = useLocation()
@@ -202,6 +243,8 @@ function AppShell({
           stackPaneOpen={stackPaneOpen}
           onToggleStackPane={onToggleStackPane}
           onSelectStack={onSelectStack}
+          modifiedStackNames={modifiedStackNames}
+          onBackup={onBackup}
         />
       </header>
 
@@ -263,6 +306,11 @@ function AppShell({
                 onAddRemote={onAddRemote}
                 onRemoveStack={onRemoveStack}
                 onExportStack={onExportStack}
+                modifiedStackNames={modifiedStackNames}
+                backupFolderName={backupFolderName}
+                lastBackupTime={lastBackupTime}
+                onChooseBackupFolder={onChooseBackupFolder}
+                onClearBackupFolder={onClearBackupFolder}
               />
             }
           />
@@ -348,6 +396,13 @@ export function App() {
   const [graphState, setGraphState] = useState<GraphState>({ status: 'loading' })
   // null = not importing; 0.0–1.0 = import in progress (drives the progress bar)
   const [dbProgress, setDbProgress] = useState<number | null>(null)
+  const [collisionState, setCollisionState] = useState<CollisionState | null>(null)
+
+  // Backup state
+  // Track names of stacks with is_modified=TRUE (names match StackDef.label)
+  const [modifiedStackNames, setModifiedStackNames] = useState<Set<string>>(new Set())
+  const [lastBackupTime, setLastBackupTime] = useState(0)
+  const [backupFolderName, setBackupFolderName] = useState<string | null>(null)
 
   // Refs so async callbacks always see current values without stale closures
   const activeStackIdRef = useRef(activeStackId)
@@ -360,6 +415,17 @@ export function App() {
   // Guards against React StrictMode running effects twice — syncWithDb must
   // only run once per page load (concurrent runs cause PGlite BroadcastChannel errors)
   const dbSyncedRef = useRef(false)
+
+  // ---------------------------------------------------------------------------
+  // Backup: load saved state from IDB on mount
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    void (async () => {
+      const [handle, time] = await Promise.all([getSavedDirectoryHandle(), getLastBackupTime()])
+      if (handle) setBackupFolderName(handle.name)
+      setLastBackupTime(time)
+    })()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------------------------------------------------------------------------
   // Step 1: Load from YAML immediately on mount — no waiting for DB
@@ -390,6 +456,16 @@ export function App() {
     if (!db || dbSyncedRef.current) return
     dbSyncedRef.current = true
     void syncWithDb(db)
+  }, [db]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ---------------------------------------------------------------------------
+  // Step 3: Once DB is ready, check backup status; then recheck every 30 s
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (!db) return
+    void checkAndMaybeAutoBackup(db)
+    const id = setInterval(() => void checkAndMaybeAutoBackup(db), 5_000)
+    return () => clearInterval(id)
   }, [db]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function syncWithDb(db: Db) {
@@ -449,11 +525,92 @@ export function App() {
   }
 
   // ---------------------------------------------------------------------------
+  // Backup helpers
+  // ---------------------------------------------------------------------------
+
+  async function checkAndMaybeAutoBackup(db: Db) {
+    const modified = await listModifiedStacks(db)
+    setModifiedStackNames(new Set(modified.map((s) => s.name)))
+    if (modified.length === 0) return
+
+    // Try a silent auto-backup if we already have a handle with permission
+    const handle = await getSavedDirectoryHandle()
+    if (!handle || !(await canAutoBackup(handle))) return
+
+    try {
+      const t = await backupModifiedStacks(db, handle)
+      setLastBackupTime(t.getTime())
+      setModifiedStackNames(new Set())
+    } catch (err) {
+      console.warn('[cardb/backup] Auto-backup failed:', err)
+    }
+  }
+
+  const handleTriggerBackup = useCallback(async () => {
+    if (!db) return
+
+    let handle = await getSavedDirectoryHandle()
+    if (!handle) {
+      try {
+        handle = await pickDirectoryHandle()
+        setBackupFolderName(handle.name)
+      } catch {
+        return // user cancelled picker
+      }
+    } else {
+      const ok = await requestBackupPermission(handle)
+      if (!ok) return
+    }
+
+    try {
+      const t = await backupModifiedStacks(db, handle)
+      setLastBackupTime(t.getTime())
+      setModifiedStackNames(new Set())
+    } catch (err) {
+      console.warn('[cardb/backup] Backup failed:', err)
+    }
+  }, [db])
+
+  const handleChooseBackupFolder = useCallback(async () => {
+    try {
+      const handle = await pickDirectoryHandle()
+      setBackupFolderName(handle.name)
+      if (db) {
+        const ok = await requestBackupPermission(handle)
+        if (ok) {
+          try {
+            const t = await backupModifiedStacks(db, handle)
+            setLastBackupTime(t.getTime())
+            setModifiedStackNames(new Set())
+          } catch (err) {
+            console.warn('[cardb/backup] Backup after folder select failed:', err)
+          }
+        }
+      }
+    } catch {
+      // user cancelled picker
+    }
+  }, [db])
+
+  const handleClearBackupFolder = useCallback(async () => {
+    await clearSavedDirectoryHandle()
+    setBackupFolderName(null)
+    setLastBackupTime(0)
+  }, [])
+
+  // ---------------------------------------------------------------------------
   // Stack switch: use DB if ready, otherwise YAML
   // ---------------------------------------------------------------------------
 
   function setLoadState(stackId: string, state: StackLoadState) {
     setStackLoadStates((prev) => new Map(prev).set(stackId, state))
+  }
+
+  // Ask the user whether to overwrite a modified stack.
+  function askCollisionConfirm(label: string): Promise<'cancel' | 'replace' | 'backup-replace'> {
+    return new Promise((resolve) => {
+      setCollisionState({ label, resolve })
+    })
   }
 
   async function loadStackDef(stackDef: StackDef, fileBytes?: Uint8Array) {
@@ -462,18 +619,59 @@ export function App() {
 
     try {
       if (db) {
-        // DB is ready — check if stack is already stored
-        const existing = fileBytes ? null : await getStackByName(db, stackDef.label)
-        if (existing && !fileBytes) {
-          // Instant switch — no import needed, no spinner
-          const graph = await buildGraphFromDb(db, existing.id)
-          await setSelectedStack(db, existing.id)
-          setGraphState({ status: 'loaded', graph, dbStackId: existing.id })
-          setLoadState(stackDef.id, 'loaded')
-          return
+        // --- Compute checksum for collision detection ---
+        let fileChecksum: string | undefined
+        let preloadedText: string | undefined
+
+        if (fileBytes) {
+          fileChecksum = await computeChecksum(fileBytes)
+        } else if (stackDef.source.type === 'remote') {
+          const url = (stackDef.source as { type: 'remote'; url: string }).url
+          const resp = await fetch(url)
+          if (!resp.ok) throw new LoadError(new Error(`HTTP ${resp.status} ${resp.statusText}`))
+          preloadedText = await resp.text()
+          fileChecksum = await computeChecksum(preloadedText)
+        } else if (stackDef.source.type === 'local' && stackDef.source.content) {
+          fileChecksum = await computeChecksum(stackDef.source.content)
         }
 
-        // Import to DB — keep current graph visible, show progress bar instead of spinner
+        // --- Collision check ---
+        if (fileChecksum) {
+          const collision = await findStackByChecksum(db, fileChecksum)
+          if (collision) {
+            if (!collision.isModified) {
+              // Same file, no edits — silent replace
+              await deleteStack(db, collision.id)
+            } else {
+              // Same file, stored copy has been edited — ask what to do
+              const result = await askCollisionConfirm(collision.name)
+              setCollisionState(null)
+              if (result === 'cancel') {
+                setLoadState(stackDef.id, 'loaded')
+                return
+              }
+              if (result === 'backup-replace') {
+                await handleTriggerBackup()
+              }
+              await deleteStack(db, collision.id)
+            }
+          }
+        }
+
+        // --- Check for matching name (non-file switch, no checksum) ---
+        if (!fileChecksum) {
+          const existing = await getStackByName(db, stackDef.label)
+          if (existing) {
+            // Instant switch — no import needed
+            const graph = await buildGraphFromDb(db, existing.id)
+            await setSelectedStack(db, existing.id)
+            setGraphState({ status: 'loaded', graph, dbStackId: existing.id })
+            setLoadState(stackDef.id, 'loaded')
+            return
+          }
+        }
+
+        // --- Import to DB ---
         setDbProgress(0)
         try {
           const dbStackId = await importStackDef(
@@ -482,6 +680,8 @@ export function App() {
             import.meta.env.BASE_URL,
             fileBytes,
             (pct) => setDbProgress(pct),
+            fileChecksum,
+            preloadedText,
           )
           await setSelectedStack(db, dbStackId)
           const graph = await buildGraphFromDb(db, dbStackId)
@@ -515,6 +715,7 @@ export function App() {
       }
     } catch (err: unknown) {
       setDbProgress(null)
+      setCollisionState(null)
       setLoadState(stackDef.id, 'error')
       const label = stackDef.label
       if (err instanceof LoadError) {
@@ -642,21 +843,60 @@ export function App() {
   const { graph } = graphState
 
   return (
-    <AppShell
-      graph={graph}
-      stacks={stacks}
-      activeStackId={activeStackId}
-      stackLoadStates={stackLoadStates}
-      dbStatus={dbError ? 'error' : dbStatus}
-      dbProgress={dbProgress}
-      stackPaneOpen={stackPaneOpen}
-      onToggleStackPane={() => setStackPaneOpen((v) => !v)}
-      onSelectStack={handleSelectStack}
-      onAddLocalFile={handleAddLocalFile}
-      onAddLocalYaml={handleAddLocalYaml}
-      onAddRemote={handleAddRemote}
-      onRemoveStack={handleRemoveStack}
-      onExportStack={handleExportStack}
-    />
+    <>
+      <AppShell
+        graph={graph}
+        stacks={stacks}
+        activeStackId={activeStackId}
+        stackLoadStates={stackLoadStates}
+        dbStatus={dbError ? 'error' : dbStatus}
+        dbProgress={dbProgress}
+        stackPaneOpen={stackPaneOpen}
+        onToggleStackPane={() => setStackPaneOpen((v) => !v)}
+        onSelectStack={handleSelectStack}
+        onAddLocalFile={handleAddLocalFile}
+        onAddLocalYaml={handleAddLocalYaml}
+        onAddRemote={handleAddRemote}
+        onRemoveStack={handleRemoveStack}
+        onExportStack={handleExportStack}
+        modifiedStackNames={modifiedStackNames}
+        backupFolderName={backupFolderName}
+        lastBackupTime={lastBackupTime}
+        onBackup={() => void handleTriggerBackup()}
+        onChooseBackupFolder={() => void handleChooseBackupFolder()}
+        onClearBackupFolder={() => void handleClearBackupFolder()}
+      />
+      {collisionState && (
+        <div className="stacks-page__modal-backdrop">
+          <div className="stacks-page__modal" role="dialog" aria-modal="true">
+            <h2 className="stacks-page__modal-title">Unsaved changes</h2>
+            <p className="stacks-page__modal-body">
+              <strong>{collisionState.label}</strong> has unsaved changes that will be lost if you
+              replace it.
+            </p>
+            <div className="stacks-page__modal-btns">
+              <button
+                className="stacks-page__modal-btn stacks-page__modal-btn--cancel"
+                onClick={() => collisionState.resolve('cancel')}
+              >
+                Cancel
+              </button>
+              <button
+                className="stacks-page__modal-btn stacks-page__modal-btn--cancel"
+                onClick={() => collisionState.resolve('replace')}
+              >
+                Replace
+              </button>
+              <button
+                className="stacks-page__modal-btn stacks-page__modal-btn--confirm"
+                onClick={() => collisionState.resolve('backup-replace')}
+              >
+                Back up &amp; replace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }

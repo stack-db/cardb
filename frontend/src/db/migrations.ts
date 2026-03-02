@@ -80,4 +80,35 @@ export const MIGRATIONS: Migration[] = [
         ON CONFLICT (key) DO NOTHING;
     `,
   },
+  {
+    version: 2,
+    sql: `
+      ALTER TABLE stacks ADD COLUMN file_checksum TEXT;
+      ALTER TABLE stacks ADD COLUMN is_modified BOOLEAN NOT NULL DEFAULT FALSE;
+    `,
+  },
+  {
+    version: 3,
+    sql: `
+      INSERT INTO app_state (key, value) VALUES ('last_db_modified', '')
+        ON CONFLICT (key) DO NOTHING;
+    `,
+  },
+  {
+    // Migration 2 was originally written with INTEGER before being corrected
+    // to BOOLEAN. If the column is still integer, convert it in three steps:
+    // drop the integer default, retype the column, restore the boolean default.
+    version: 4,
+    sql: `
+      DO $$
+      BEGIN
+        IF (SELECT data_type FROM information_schema.columns
+            WHERE table_name = 'stacks' AND column_name = 'is_modified') = 'integer' THEN
+          ALTER TABLE stacks ALTER COLUMN is_modified DROP DEFAULT;
+          ALTER TABLE stacks ALTER COLUMN is_modified TYPE BOOLEAN USING (is_modified != 0);
+          ALTER TABLE stacks ALTER COLUMN is_modified SET DEFAULT FALSE;
+        END IF;
+      END $$;
+    `,
+  },
 ]

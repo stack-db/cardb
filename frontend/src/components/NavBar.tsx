@@ -12,6 +12,8 @@ interface NavBarProps {
   stackPaneOpen: boolean
   onToggleStackPane: () => void
   onSelectStack: (id: string) => void
+  modifiedStackNames: Set<string>
+  onBackup: () => void
 }
 
 export function NavBar({
@@ -21,10 +23,13 @@ export function NavBar({
   stackPaneOpen,
   onToggleStackPane,
   onSelectStack,
+  modifiedStackNames,
+  onBackup,
 }: NavBarProps) {
   const navigate = useNavigate()
 
   const activeStackLabel = (stacks.find((s) => s.id === activeStackId) ?? stacks[0]).label
+  const activeStackModified = modifiedStackNames.has(activeStackLabel)
 
   // Close the stack pane when clicking outside the wrapper
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -51,6 +56,16 @@ export function NavBar({
           aria-label="Manage stacks"
           title="Manage stacks"
         >
+          {activeStackModified && (
+            <i
+              className="fa-solid fa-circle fa-xs nav-bar__modified-dot"
+              aria-label="Modified"
+              onClick={(e) => {
+                e.stopPropagation()
+                onBackup()
+              }}
+            />
+          )}
           <i className="fa-solid fa-layer-group nav-bar__stack-icon" aria-hidden="true" />
           <span className="nav-bar__stack-label">{activeStackLabel}</span>
         </button>
@@ -60,6 +75,7 @@ export function NavBar({
           isOpen={stackPaneOpen}
           onSelect={onSelectStack}
           onClose={onToggleStackPane}
+          modifiedStackNames={modifiedStackNames}
         />
       </div>
 
