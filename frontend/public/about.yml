@@ -33,6 +33,20 @@ nodes:
 
   - handle: n002
     fields:
+      name: The subway map
+      text: >
+        Why is a stack good for knowledge sharing?
+
+        Let's say you wanted to share knowledge about how to get around
+        New York City.
+
+        * The LLM way: you gather up a thousand hours of city travel video
+        and give it to someone, saying "here's where everything is."
+
+        * The stack way: you hand them a subway map.
+
+  - handle: n003
+    fields:
       name: Secure and local
       text: >
 
@@ -43,7 +57,7 @@ nodes:
 
         And it's shareware, so there are no usage limits or fees.
 
-  - handle: n003
+  - handle: n004
     fields:
       name: Extensible
       text: >
@@ -52,7 +66,7 @@ nodes:
         You can add buttons, text, and images to your stacks.
         You can even add code (coming soon).
 
-  - handle: n004
+  - handle: n005
     fields:
       name: Demos
       text: >
@@ -86,6 +100,12 @@ links:
 
   - source: "@n003"
     target: "@n004"
+    bidirectional: true
+    rel: next
+    reverse-rel: prev
+
+  - source: "@n004"
+    target: "@n005"
     bidirectional: true
     rel: next
     reverse-rel: prev
