@@ -11,14 +11,24 @@ function getNodeLabel(node: NodeData): string {
   return typeof v === 'string' && v ? v : node.handle
 }
 
+const SEARCH_FIELDS = ['name', 'description', 'text', 'value']
+
+function nodeSearchText(node: NodeData): string {
+  const parts: string[] = [node.handle, getNodeLabel(node)]
+  for (const key of SEARCH_FIELDS) {
+    const v = node.fields[key]
+    if (typeof v === 'string' && v) parts.push(v)
+  }
+  return parts.join('\0').toLowerCase()
+}
+
 function searchNodes(query: string, graph: ResolvedGraph): NodeData[] {
   const q = query.toLowerCase().trim()
   if (!q) return []
   const results: NodeData[] = []
   for (const handle of graph.orderedHandles) {
     const node = graph.nodeIndex.get(handle)!
-    const label = getNodeLabel(node).toLowerCase()
-    if (handle.includes(q) || label.includes(q)) {
+    if (nodeSearchText(node).includes(q)) {
       results.push(node)
       if (results.length >= 20) break
     }

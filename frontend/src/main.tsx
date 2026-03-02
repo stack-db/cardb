@@ -32,9 +32,9 @@ async function applyPendingReset() {
 }
 
 // Preferred reset path: close the PGlite worker gracefully so it flushes all
-// pending OPFS writes and releases its sync access handles, then reload.
-// applyPendingReset() runs on the fresh page before any new worker starts and
-// can delete the directory without hitting NoModificationAllowedError.
+// pending OPFS writes and releases its sync access handles, then forcefully
+// terminate the worker thread so the new page's worker doesn't race it for
+// the OPFS leader lock ("Leader changed" error).
 async function resetDb() {
   sessionStorage.setItem('cardb_reset', '1')
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,10 +43,14 @@ async function resetDb() {
     try {
       await db.close()
     } catch {
-      // If close() fails, proceed — location.reload() terminates the worker
-      // and the browser releases any remaining OS-level file handles.
+      // If close() fails, proceed — terminateDbWorker + location.reload()
+      // will forcibly release any remaining OS-level file handles.
     }
   }
+  // Hard-terminate the worker thread BEFORE reload so no zombie worker holds
+  // the OPFS leader lock when the new page's worker tries to acquire it.
+  const { terminateDbWorker } = await import('./db/index')
+  terminateDbWorker()
   location.reload()
 }
 

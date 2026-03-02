@@ -7,6 +7,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Db } from '../db/index'
+import { terminateDbWorker } from '../db/index'
 
 export type DbStatus =
   | 'initializing' // worker starting, WASM loading
@@ -61,10 +62,18 @@ export function DbProvider({ children }: { children: ReactNode }) {
       }
     }
 
+    // Terminate the worker synchronously on page unload so its OPFS sync
+    // access handles are released before the next page load's worker starts.
+    // Without this, a Vite HMR reload or browser refresh can leave handles
+    // open long enough for the new worker to hit NoModificationAllowedError.
+    const handleBeforeUnload = () => terminateDbWorker()
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
     void init()
 
     return () => {
       cancelled = true
+      window.removeEventListener('beforeunload', handleBeforeUnload)
       // Do NOT close dbInstance here. openDb() is a module-level singleton;
       // closing it during StrictMode's unmount/remount cycle would kill the
       // shared worker and trigger PGlite leader-election errors on remount.
