@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import { DbProvider } from './contexts/DbContext'
 import { App } from './App'
+import '@fortawesome/fontawesome-free/css/all.min.css'
 import './index.css'
 
 // ---------------------------------------------------------------------------
