@@ -9,8 +9,6 @@ export default defineConfig({
     pool: 'forks',
     testTimeout: 15000,
     setupFiles: ['src/tests/setup.ts'],
-    environmentMatchGlobs: [
-      ['src/tests/components/**/*.test.tsx', 'happy-dom'],
-    ],
+    environmentMatchGlobs: [['src/tests/components/**/*.test.tsx', 'happy-dom']],
   },
 })

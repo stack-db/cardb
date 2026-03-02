@@ -8,13 +8,10 @@ const coiServiceWorkerPlugin = () => {
   return {
     name: 'coi-serviceworker',
     configureServer(server: any) {
-      server.middlewares.use(
-        `${server.config.base}coi-serviceworker.js`,
-        (_: any, res: any) => {
-          res.setHeader('Content-Type', 'application/javascript')
-          res.end(src)
-        },
-      )
+      server.middlewares.use(`${server.config.base}coi-serviceworker.js`, (_: any, res: any) => {
+        res.setHeader('Content-Type', 'application/javascript')
+        res.end(src)
+      })
     },
     generateBundle(this: any) {
       this.emitFile({ type: 'asset', fileName: 'coi-serviceworker.js', source: src })
