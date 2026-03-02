@@ -21,4 +21,5 @@ jobs:
         working-directory: frontend
 
       - name: Check
-        run: make check
+        run: npm test && npm run lint && npm run format:check
+        working-directory: frontend
