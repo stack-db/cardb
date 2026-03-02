@@ -15,8 +15,6 @@ export const BUILTIN_STACKS: StackDef[] = [
     label: 'About stackdb',
     source: { type: 'bundled', filename: 'about.yml' },
   },
-  { id: 'got', label: 'GraphOfThrones', source: { type: 'bundled', filename: 'got.yml' } },
-  { id: 'medline', label: 'MedlinePlus', source: { type: 'bundled', filename: 'medline.yml' } },
 ]
 
 const REMOTE_STACKS_KEY = 'cardb_remote_stacks'

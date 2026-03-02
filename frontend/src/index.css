@@ -588,6 +588,12 @@ body {
   padding: 0.35rem 0.65rem;
 }
 
+.stacks-page__examples-hint {
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+  color: #555;
+}
+
 .stacks-page__list {
   list-style: none;
   border-top: 1px solid #f0f0f0;

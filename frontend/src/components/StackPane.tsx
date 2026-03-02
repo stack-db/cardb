@@ -57,7 +57,7 @@ export function StackPane({
             navigate('/stacks')
           }}
         >
-          More…
+          Manage…
           <i className="fa-solid fa-chevron-right" aria-hidden="true" />
         </button>
       </div>

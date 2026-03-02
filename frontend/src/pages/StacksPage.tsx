@@ -255,6 +255,13 @@ export function StacksPage({
         </div>
       </div>
 
+      <p className="stacks-page__examples-hint">
+        For more examples, try{' '}
+        <a href="https://stackdb.org/examples/" target="_blank" rel="noopener noreferrer">
+          stackdb.org/examples/
+        </a>
+      </p>
+
       <ul className="stacks-page__list">
         {stacks.map((stack) => {
           const isActive = stack.id === activeStackId
