@@ -88,14 +88,14 @@ export function SearchBar({ graph, onNavigate }: SearchBarProps) {
           ref={inputRef}
           type="search"
           className="search-bar__input"
-          placeholder="Search nodes…"
+          placeholder="Search…"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
             setActiveIdx(-1)
           }}
           onKeyDown={handleKeyDown}
-          aria-label="Search nodes"
+          aria-label="Search"
           aria-autocomplete="list"
           aria-expanded={isOpen}
           autoComplete="off"

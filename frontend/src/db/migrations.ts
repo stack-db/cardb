@@ -111,4 +111,12 @@ export const MIGRATIONS: Migration[] = [
       END $$;
     `,
   },
+  {
+    // Remove old bundled example stacks (GraphOfThrones, MedlinePlus) that were
+    // shipped with earlier versions. Cascades to nodes, links, tags, etc.
+    // If selected_stack_id pointed at one of these, buildGraphFromDb will find
+    // an empty graph on next startup and fall back to the about stack.
+    version: 5,
+    sql: `DELETE FROM stacks WHERE name IN ('GraphOfThrones', 'MedlinePlus');`,
+  },
 ]

@@ -795,6 +795,7 @@ export function App() {
         return next
       })
       if (activeStackIdRef.current === stackId) {
+        setGraphState({ status: 'loading' })
         void loadStackDef(BUILTIN_STACKS[0])
       }
     },
