@@ -15,20 +15,15 @@ import type { ResolvedGraph, NodeData, LinkData } from '../types'
 // Domain types (re-exported for consumers)
 // ---------------------------------------------------------------------------
 
-/** A node after Pass 2 resolution. */
-export interface ResolvedNode {
-  handle: string
-  aliases: string[]
-  fields: Record<string, unknown>
-  tags: string[]
-}
+/** @deprecated Use NodeData from types.ts instead */
+export type ResolvedNode = NodeData
 
 /** A link after Pass 2 resolution — source and target are full node objects. */
 export interface ResolvedLink {
   handle: string | null
   aliases: string[]
-  source: ResolvedNode
-  target: ResolvedNode
+  source: NodeData
+  target: NodeData
   rel: string
   fields: Record<string, unknown>
   tags: string[]
@@ -39,7 +34,7 @@ export interface LoadedStack {
   title: string
   /** Optional handle to use as the first displayed card. */
   firstCardHandle: string | null
-  nodes: ResolvedNode[]
+  nodes: NodeData[]
   links: ResolvedLink[]
   /** Map of docs-relative path → raw bytes (e.g. "headshots/bob.jpg" → Uint8Array). */
   embeddedFiles: Map<string, Uint8Array>
@@ -101,11 +96,12 @@ function loadStackFromZip(archiveBytes: Uint8Array): LoadedStack {
 }
 
 /**
- * Load a graph from a YAML string (for bundled stacks — no ZIP wrapping).
- * Embedded files are empty since bundled stacks don't use $.path refs.
+ * Load a graph from a YAML string (no ZIP wrapping).
+ * Embedded files are empty since plain YAML stacks don't use $.path refs.
+ * Uses non-strict link resolution (silently skips unresolvable refs).
  */
-export async function loadFromYamlString(yamlText: string, title: string): Promise<LoadedStack> {
-  return loadFromYaml(yamlText, new Map(), title)
+export function loadFromYamlString(yamlText: string, title?: string): LoadedStack {
+  return loadFromYaml(yamlText, new Map(), title, false)
 }
 
 // ---------------------------------------------------------------------------
@@ -143,6 +139,7 @@ function loadFromYaml(
   yamlText: string,
   embeddedFiles: Map<string, Uint8Array>,
   titleOverride?: string,
+  strictLinks = true,
 ): LoadedStack {
   // Parse YAML
   let yml: RawYml
@@ -167,7 +164,7 @@ function loadFromYaml(
   const index = buildHandleIndex(rawNodes)
 
   // Pass 2: resolve links
-  const links = resolveLinks(yml.links, index)
+  const links = resolveLinks(yml.links, index, strictLinks)
 
   // Validate $.path file references
   for (const node of index.orderedNodes) {
@@ -254,15 +251,9 @@ export function loadedStackToResolvedGraph(loaded: LoadedStack): ResolvedGraph {
   const orderedHandles: string[] = []
 
   for (const node of loaded.nodes) {
-    const data: NodeData = {
-      handle: node.handle,
-      aliases: node.aliases,
-      fields: node.fields,
-      tags: node.tags,
-    }
-    nodeIndex.set(node.handle, data)
+    nodeIndex.set(node.handle, node)
     for (const alias of node.aliases) {
-      nodeIndex.set(alias, data)
+      nodeIndex.set(alias, node)
     }
     orderedHandles.push(node.handle)
   }
@@ -295,17 +286,9 @@ export function loadedStackToResolvedGraph(loaded: LoadedStack): ResolvedGraph {
 
 export function resolvedGraphToLoadedStack(graph: ResolvedGraph, title: string): LoadedStack {
   // Build node list from orderedHandles (dedup by handle — no aliases in list)
-  const nodeDataList: NodeData[] = graph.orderedHandles.map((h) => graph.nodeIndex.get(h)!)
+  const nodes: NodeData[] = graph.orderedHandles.map((h) => graph.nodeIndex.get(h)!)
 
-  // Map NodeData → ResolvedNode (same structure)
-  const resolvedNodes: ResolvedNode[] = nodeDataList.map((n) => ({
-    handle: n.handle,
-    aliases: n.aliases,
-    fields: n.fields,
-    tags: n.tags,
-  }))
-
-  const nodeByHandle = new Map<string, ResolvedNode>(resolvedNodes.map((n) => [n.handle, n]))
+  const nodeByHandle = new Map<string, NodeData>(nodes.map((n) => [n.handle, n]))
 
   // Map outgoing links to ResolvedLink[]
   const resolvedLinks: ResolvedLink[] = []
@@ -313,15 +296,14 @@ export function resolvedGraphToLoadedStack(graph: ResolvedGraph, title: string):
     const sourceNode = nodeByHandle.get(sourceHandle)
     if (!sourceNode) continue
     for (const link of links) {
-      const linkData = link as LinkData
-      const targetNode = nodeByHandle.get(linkData.targetHandle)
+      const targetNode = nodeByHandle.get(link.targetHandle)
       if (!targetNode) continue
       resolvedLinks.push({
         handle: null,
         aliases: [],
         source: sourceNode,
         target: targetNode,
-        rel: linkData.rel,
+        rel: link.rel,
         fields: {},
         tags: [],
       })
@@ -331,7 +313,7 @@ export function resolvedGraphToLoadedStack(graph: ResolvedGraph, title: string):
   return {
     title,
     firstCardHandle: graph.defaultHandle || null,
-    nodes: resolvedNodes,
+    nodes,
     links: resolvedLinks,
     embeddedFiles: new Map(),
     stackCode: graph.stackCode,

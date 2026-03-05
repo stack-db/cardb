@@ -1,11 +1,7 @@
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { NodeData, ResolvedGraph } from '../types'
-
-function getNodeLabel(node: NodeData): string {
-  const v = node.fields['title'] ?? node.fields['name']
-  return typeof v === 'string' && v ? v : node.handle
-}
+import type { ResolvedGraph } from '../types'
+import { getNodeLabel } from '../utils'
 
 interface TagViewProps {
   graph: ResolvedGraph

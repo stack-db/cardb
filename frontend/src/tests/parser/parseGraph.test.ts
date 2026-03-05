@@ -49,9 +49,11 @@ nodes:
     expect(alice.tags).toContain('person')
   })
 
-  it('throws ParseError for empty.yml (no nodes)', () => {
-    expect(() => parseGraph(fixture('empty.yml'))).toThrow(ParseError)
-    expect(() => parseGraph(fixture('empty.yml'))).toThrow(/empty/i)
+  it('handles empty.yml (no nodes) as an empty graph', () => {
+    const graph = parseGraph(fixture('empty.yml'))
+    expect(graph.nodeIndex.size).toBe(0)
+    expect(graph.orderedHandles).toHaveLength(0)
+    expect(graph.defaultHandle).toBe('')
   })
 
   it('throws ParseError for bad-yaml.yml (invalid YAML)', () => {

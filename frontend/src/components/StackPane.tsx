@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import type { StackDef } from '../stacks'
+import { sourceLabel } from '../utils'
 
 interface StackPaneProps {
   stacks: StackDef[]
@@ -19,12 +20,6 @@ export function StackPane({
   modifiedStackNames,
 }: StackPaneProps) {
   const navigate = useNavigate()
-
-  const sourceLabel = (s: StackDef) => {
-    if (s.source.type === 'remote') return 'remote'
-    if (s.source.type === 'local') return 'local'
-    return null
-  }
 
   return (
     <div className={`stack-pane${isOpen ? ' stack-pane--open' : ''}`} aria-hidden={!isOpen}>

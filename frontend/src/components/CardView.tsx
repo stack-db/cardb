@@ -1,12 +1,7 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { marked } from 'marked'
 import type { NodeData, LinkData, ResolvedGraph } from '../types'
-import {
-  parseTypedField,
-  extractFileRefPath,
-  getEffectiveFields,
-  isDisplayableField,
-} from '../fieldTypes'
+import { parseTypedField, getEffectiveFields, isDisplayableField } from '../fieldTypes'
 import { CardBack } from './CardBack'
 import { FieldList } from './FieldList'
 import { LinkGroup } from './LinkGroup'
@@ -55,10 +50,7 @@ function renderValueHtml(fieldName: string, value: unknown): string {
         return `<div class="field-value--markdown">${renderMarkdown(typed.value)}</div>`
 
       case 'img': {
-        const fileRefPath = extractFileRefPath(typed.value)
-        // For custom renderers, embedded files can't be resolved; use value as-is
-        const src = fileRefPath ? typed.value : typed.value
-        const imgHtml = `<img class="field-value--img" src="${escapeHtml(src)}" alt="" />`
+        const imgHtml = `<img class="field-value--img" src="${escapeHtml(typed.value)}" alt="" />`
         if (!typed.href) return imgHtml
         if (typed.href.startsWith('@')) {
           const handle = typed.href.slice(1)

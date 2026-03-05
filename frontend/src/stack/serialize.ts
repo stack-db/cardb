@@ -93,6 +93,14 @@ function buildYml(stack: LoadedStack, title: string): Record<string, unknown> {
     yml['first_card'] = `@${stack.firstCardHandle}`
   }
 
+  if (stack.stackFields && Object.keys(stack.stackFields).length > 0) {
+    yml['fields'] = stack.stackFields
+  }
+
+  if (stack.stackCode) {
+    yml['code'] = stack.stackCode
+  }
+
   yml['nodes'] = nodes
   if (links.length > 0) {
     yml['links'] = links

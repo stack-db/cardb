@@ -1,37 +1,4 @@
 // ---------------------------------------------------------------------------
-// Raw parsed types (directly from stack.yml YAML)
-// ---------------------------------------------------------------------------
-
-/** A node entry as parsed from stack.yml (before link resolution). */
-export interface RawNode {
-  handle: string
-  aliases?: string[]
-  fields: Record<string, unknown>
-  tags?: string[]
-}
-
-/** A link entry as parsed from stack.yml (before handle resolution). */
-export interface RawLink {
-  source: string // '@handle' bare string
-  target: string // '@handle' bare string
-  rel?: string // relationship type label; defaults to 'related'
-  'reverse-rel'?: string // rel label to use in the reverse direction (requires bidirectional)
-  bidirectional?: boolean // if true, also display the inverse link on the target node
-  fields?: Record<string, unknown>
-  tags?: string[]
-}
-
-/** Top-level structure of a stack.yml file. */
-export interface StackYml {
-  title?: string
-  first_card?: string // '@handle' bare string; optional
-  fields?: Record<string, unknown> // stack-level field defaults
-  nodes: RawNode[]
-  links?: RawLink[]
-  code?: string | { src: string } // JavaScript function definitions (e.g. onShowCard)
-}
-
-// ---------------------------------------------------------------------------
 // Resolved graph types (post-parse, used by React components)
 // ---------------------------------------------------------------------------
 

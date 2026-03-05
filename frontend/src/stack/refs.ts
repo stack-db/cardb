@@ -6,7 +6,8 @@
  */
 
 import { StackHandleCollisionError, StackUnresolvedRefError, StackYamlError } from './errors'
-import type { ResolvedNode, ResolvedLink } from './load'
+import type { NodeData } from '../types'
+import type { ResolvedLink } from './load'
 
 // ---------------------------------------------------------------------------
 // Raw YAML types (stack.yml parsed structure)
@@ -43,22 +44,22 @@ export interface RawYml {
 // ---------------------------------------------------------------------------
 
 export interface HandleIndex {
-  /** Maps handle and alias names → ResolvedNode */
-  nodeByName: Map<string, ResolvedNode>
+  /** Maps handle and alias names → NodeData */
+  nodeByName: Map<string, NodeData>
   /** Canonical nodes in file order (no aliases) */
-  orderedNodes: ResolvedNode[]
+  orderedNodes: NodeData[]
 }
 
 export function buildHandleIndex(rawNodes: RawYmlNode[]): HandleIndex {
-  const nodeByName = new Map<string, ResolvedNode>()
-  const orderedNodes: ResolvedNode[] = []
+  const nodeByName = new Map<string, NodeData>()
+  const orderedNodes: NodeData[] = []
 
   for (const raw of rawNodes) {
     if (!raw.handle || typeof raw.handle !== 'string') {
       throw new StackYamlError('A node is missing a required "handle" property')
     }
 
-    const node: ResolvedNode = {
+    const node: NodeData = {
       handle: raw.handle,
       aliases: raw.aliases ?? [],
       fields: raw.fields ?? {},
@@ -97,9 +98,15 @@ function stripAt(ref: string): string {
   return ref.startsWith('@') ? ref.slice(1) : ref
 }
 
+/**
+ * Resolve raw link references to full ResolvedLink objects.
+ * @param strict If true (default), throws on unresolvable references.
+ *               If false, silently skips unresolvable links (viewer mode).
+ */
 export function resolveLinks(
   rawLinks: RawYmlLink[] | undefined,
   index: HandleIndex,
+  strict = true,
 ): ResolvedLink[] {
   if (!rawLinks) return []
 
@@ -112,17 +119,15 @@ export function resolveLinks(
     const sourceNode = index.nodeByName.get(sourceKey)
     const targetNode = index.nodeByName.get(targetKey)
 
-    if (!sourceNode) {
-      throw new StackUnresolvedRefError(
-        raw.source,
-        `Unresolved reference: "${raw.source}" — no node with that handle or alias`,
-      )
-    }
-    if (!targetNode) {
-      throw new StackUnresolvedRefError(
-        raw.target,
-        `Unresolved reference: "${raw.target}" — no node with that handle or alias`,
-      )
+    if (!sourceNode || !targetNode) {
+      if (strict) {
+        const missing = !sourceNode ? raw.source : raw.target
+        throw new StackUnresolvedRefError(
+          missing,
+          `Unresolved reference: "${missing}" — no node with that handle or alias`,
+        )
+      }
+      continue
     }
 
     resolved.push({
@@ -143,15 +148,15 @@ export function resolveLinks(
 // File reference helpers
 // ---------------------------------------------------------------------------
 
-/** Returns true if value is a stack file reference (starts with "$."). */
+/** Returns true if value is a stack file reference (starts with "$." or "$/"). */
 export function isFileRef(value: unknown): value is string {
-  return typeof value === 'string' && value.startsWith('$.')
+  return typeof value === 'string' && (value.startsWith('$.') || value.startsWith('$/'))
 }
 
-/** Given a file reference string (e.g. "$.headshots/bob.jpg"), returns the docs-relative path. */
+/** Given a file reference string (e.g. "$.headshots/bob.jpg" or "$/headshots/bob.jpg"), returns the docs-relative path. */
 export function resolveFileRef(ref: string): string {
   if (!isFileRef(ref)) {
     throw new TypeError(`Not a valid file reference: "${ref}"`)
   }
-  return ref.slice(2) // strip "$."
+  return ref.slice(2) // strip "$." or "$/"
 }

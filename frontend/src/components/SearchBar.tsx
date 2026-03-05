@@ -1,14 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { NodeData, ResolvedGraph } from '../types'
+import { getNodeLabel } from '../utils'
 
 interface SearchBarProps {
   graph: ResolvedGraph
   onNavigate: (handle: string) => void
-}
-
-function getNodeLabel(node: NodeData): string {
-  const v = node.fields['title'] ?? node.fields['name']
-  return typeof v === 'string' && v ? v : node.handle
 }
 
 const SEARCH_FIELDS = ['name', 'description', 'text', 'value']

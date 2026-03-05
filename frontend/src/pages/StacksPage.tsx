@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import type { StackDef, StackLoadState } from '../stacks'
+import { sourceLabel } from '../utils'
 
 interface StacksPageProps {
   stacks: StackDef[]
@@ -118,12 +119,6 @@ export function StacksPage({
     } finally {
       setRemoteLoading(false)
     }
-  }
-
-  const sourceLabel = (s: StackDef) => {
-    if (s.source.type === 'remote') return 'remote'
-    if (s.source.type === 'local') return 'local'
-    return null
   }
 
   const stateLabel = (state: StackLoadState, isActive: boolean) => {
