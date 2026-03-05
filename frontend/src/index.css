@@ -110,6 +110,20 @@ body {
   cursor: pointer;
 }
 
+/* Right: info link */
+.nav-bar__info-link {
+  color: #999;
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.nav-bar__info-link:hover {
+  color: #555;
+}
+
 /* -----------------------------------------------------------------------
    Search bar
    ----------------------------------------------------------------------- */

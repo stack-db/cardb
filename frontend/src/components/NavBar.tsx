@@ -81,6 +81,18 @@ export function NavBar({
 
       {/* Center: search */}
       <SearchBar graph={graph} onNavigate={(h) => navigate(`/node/${h}`)} />
+
+      {/* Right: info link */}
+      <a
+        className="nav-bar__info-link"
+        href="https://stackdb.org/doc"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Documentation"
+        title="Documentation"
+      >
+        <i className="fa-regular fa-circle-question" aria-hidden="true" />
+      </a>
     </nav>
   )
 }
