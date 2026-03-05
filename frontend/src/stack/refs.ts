@@ -32,8 +32,10 @@ export interface RawYmlLink {
 export interface RawYml {
   title?: string
   first_card?: string
+  fields?: Record<string, unknown>
   nodes?: RawYmlNode[]
   links?: RawYmlLink[]
+  code?: string | { src: string }
 }
 
 // ---------------------------------------------------------------------------

@@ -5,6 +5,10 @@ interface CardControlsProps {
   currentHandle: string
   showBack: boolean
   onToggleBack: (val: boolean) => void
+  isLocked: boolean
+  onToggleLocked: (val: boolean) => void
+  designMode: boolean
+  onSetDesignMode: (val: boolean) => void
 }
 
 export function CardControls({
@@ -12,6 +16,10 @@ export function CardControls({
   currentHandle,
   showBack,
   onToggleBack,
+  isLocked,
+  onToggleLocked,
+  designMode,
+  onSetDesignMode,
 }: CardControlsProps) {
   const navigate = useNavigate()
 
@@ -24,23 +32,53 @@ export function CardControls({
 
   return (
     <div className="card-controls">
-      {/* Front / Back toggle */}
-      <div className="card-controls__face-toggle" role="group" aria-label="Card face">
+      {/* Front / Back toggle + lock */}
+      <div className="card-controls__face-section">
+        <div className="card-controls__face-toggle" role="group" aria-label="Card face">
+          <button
+            className={`card-controls__face-btn${!showBack ? ' card-controls__face-btn--active' : ''}`}
+            onClick={() => onToggleBack(false)}
+            aria-pressed={!showBack}
+          >
+            Front
+          </button>
+          <button
+            className={`card-controls__face-btn${showBack ? ' card-controls__face-btn--active' : ''}`}
+            onClick={() => onToggleBack(true)}
+            aria-pressed={showBack}
+          >
+            Back
+          </button>
+        </div>
         <button
-          className={`card-controls__face-btn${!showBack ? ' card-controls__face-btn--active' : ''}`}
-          onClick={() => onToggleBack(false)}
-          aria-pressed={!showBack}
+          className="card-controls__lock-btn"
+          onClick={() => onToggleLocked(!isLocked)}
+          title={isLocked ? 'Locked — click to unlock' : 'Unlocked — click to lock'}
+          aria-label={isLocked ? 'Locked' : 'Unlocked'}
         >
-          Front
-        </button>
-        <button
-          className={`card-controls__face-btn${showBack ? ' card-controls__face-btn--active' : ''}`}
-          onClick={() => onToggleBack(true)}
-          aria-pressed={showBack}
-        >
-          Back
+          <i className={`fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}`} aria-hidden="true" />
         </button>
       </div>
+
+      {/* Use / Design mode toggle (only when unlocked) */}
+      {!isLocked && (
+        <div className="card-controls__mode-toggle" role="group" aria-label="Edit mode">
+          <button
+            className={`card-controls__mode-btn${!designMode ? ' card-controls__mode-btn--active' : ''}`}
+            onClick={() => onSetDesignMode(false)}
+            aria-pressed={!designMode}
+          >
+            Use
+          </button>
+          <button
+            className={`card-controls__mode-btn${designMode ? ' card-controls__mode-btn--active' : ''}`}
+            onClick={() => onSetDesignMode(true)}
+            aria-pressed={designMode}
+          >
+            Design
+          </button>
+        </div>
+      )}
 
       <hr className="card-controls__divider" />
 

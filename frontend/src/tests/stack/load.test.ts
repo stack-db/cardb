@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import { zipSync, strToU8 } from 'fflate'
 import { loadStack, loadFromYamlString } from '../../stack/load'
-import { StackArchiveError, StackYamlError, StackHandleCollisionError } from '../../stack/errors'
+import {
+  StackArchiveError,
+  StackYamlError,
+  StackHandleCollisionError,
+  StackMissingFileError,
+} from '../../stack/errors'
 
 function makeStack(yamlText: string, extraFiles?: Record<string, Uint8Array>): Uint8Array {
   const entries: Record<string, Uint8Array> = {
@@ -39,9 +44,16 @@ links:
     expect(stack.links[0].target.handle).toBe('bob')
   })
 
-  it('throws StackArchiveError for invalid ZIP', async () => {
-    const notAZip = new Uint8Array([1, 2, 3, 4])
-    await expect(loadStack(notAZip)).rejects.toBeInstanceOf(StackArchiveError)
+  it('throws StackArchiveError for corrupt ZIP (PK header but invalid body)', async () => {
+    // Bytes starting with PK are treated as ZIP; a corrupt body should throw StackArchiveError
+    const corruptZip = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3, 4])
+    await expect(loadStack(corruptZip)).rejects.toBeInstanceOf(StackArchiveError)
+  })
+
+  it('throws StackYamlError for non-ZIP bytes that are not valid YAML', async () => {
+    // Bytes not starting with PK are treated as YAML text; binary garbage → StackYamlError
+    const garbage = new Uint8Array([0x01, 0x02, 0x03, 0x04])
+    await expect(loadStack(garbage)).rejects.toBeInstanceOf(StackYamlError)
   })
 
   it('throws StackArchiveError when stack.yml missing', async () => {
@@ -99,6 +111,48 @@ nodes:
     const bytes = makeStack(yaml, { 'docs/headshots/alice.png': png })
     const stack = await loadStack(bytes)
     expect(stack.embeddedFiles.has('headshots/alice.png')).toBe(true)
+  })
+
+  it('preserves code field when it is a string', async () => {
+    const yaml = `
+nodes:
+  - handle: n001
+    fields:
+      code: |
+        function onShowCard(node, stack, element) {
+          element.innerHTML = '<h1>Hello</h1>'
+        }
+`
+    const bytes = makeStack(yaml)
+    const stack = await loadStack(bytes)
+    expect(typeof stack.nodes[0].fields['code']).toBe('string')
+    expect(stack.nodes[0].fields['code'] as string).toContain('onShowCard')
+  })
+
+  it('resolves code: {src} to file content from docs/', async () => {
+    const script = 'function onShowCard(node, stack, element) { element.innerHTML = "Hi" }'
+    const yaml = `
+nodes:
+  - handle: n001
+    fields:
+      code:
+        src: '$/script.js'
+`
+    const bytes = makeStack(yaml, { 'docs/script.js': strToU8(script) })
+    const stack = await loadStack(bytes)
+    expect(stack.nodes[0].fields['code']).toBe(script)
+  })
+
+  it('throws StackMissingFileError when code src file is absent', async () => {
+    const yaml = `
+nodes:
+  - handle: n001
+    fields:
+      code:
+        src: '$/missing.js'
+`
+    const bytes = makeStack(yaml)
+    await expect(loadStack(bytes)).rejects.toBeInstanceOf(StackMissingFileError)
   })
 
   it('resolves aliases in link references', async () => {

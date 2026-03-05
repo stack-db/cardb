@@ -13,7 +13,7 @@ export const BUILTIN_STACKS: StackDef[] = [
   {
     id: 'about',
     label: 'About stackdb',
-    source: { type: 'bundled', filename: 'about.yml' },
+    source: { type: 'bundled', filename: 'about.stack' },
   },
 ]
 

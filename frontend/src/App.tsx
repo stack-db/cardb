@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { Routes, Route, Navigate, useParams, useNavigate, useLocation } from 'react-router-dom'
 import type { ResolvedGraph, NodeData, LinkData } from './types'
 import { loadGraph, parseGraph } from './stack/parser'
-import { loadStack, resolvedGraphToLoadedStack } from './stack/load'
+import { loadStack, resolvedGraphToLoadedStack, buildTagCards } from './stack/load'
 import { serializeStack } from './stack/serialize'
 import { LoadError, ParseError } from './stack/errors'
 import {
@@ -15,6 +15,7 @@ import {
 import { useDb } from './contexts/DbContext'
 import {
   importStack,
+  getStack,
   getStackByName,
   findStackByChecksum,
   computeChecksum,
@@ -37,6 +38,8 @@ import {
 import { CardControls } from './components/CardControls'
 import { CardView } from './components/CardView'
 import { NavBar } from './components/NavBar'
+import { CardRenderContext } from './contexts/CardRenderContext'
+import { updateNodeField } from './db/queries/nodes'
 import { TagIndex } from './components/TagIndex'
 import { TagView } from './components/TagView'
 import { LoadingSpinner } from './components/LoadingSpinner'
@@ -64,7 +67,11 @@ type CollisionState = {
 // ---------------------------------------------------------------------------
 
 async function buildGraphFromDb(db: Db, dbStackId: string): Promise<ResolvedGraph> {
-  const [nodes, links] = await Promise.all([listNodes(db, dbStackId), listLinks(db, dbStackId)])
+  const [nodes, links, stackRecord] = await Promise.all([
+    listNodes(db, dbStackId),
+    listLinks(db, dbStackId),
+    getStack(db, dbStackId),
+  ])
 
   const nodeById = new Map(nodes.map((n) => [n.id, n]))
 
@@ -99,8 +106,11 @@ async function buildGraphFromDb(db: Db, dbStackId: string): Promise<ResolvedGrap
     outgoingLinks.set(sourceNode.handle, list)
   }
 
+  const nodeList = orderedHandles.map((h) => nodeIndex.get(h)!)
+  const stackFields = stackRecord?.stackFields ?? {}
+  const tagCards = buildTagCards(nodeList)
   const defaultHandle = orderedHandles[0] ?? ''
-  return { nodeIndex, outgoingLinks, defaultHandle, orderedHandles }
+  return { nodeIndex, outgoingLinks, defaultHandle, orderedHandles, stackFields, tagCards }
 }
 
 // ---------------------------------------------------------------------------
@@ -114,17 +124,13 @@ async function importStackDef(
   fileBytes?: Uint8Array,
   onProgress?: ImportProgressCallback,
   fileChecksum?: string,
-  preloadedText?: string,
-): Promise<string> {
+): Promise<{ id: string; stackCode?: string }> {
   let loaded
 
   if (fileBytes) {
     loaded = await loadStack(fileBytes)
   } else if (stackDef.source.type === 'local') {
     const graph = parseGraph(stackDef.source.content)
-    loaded = resolvedGraphToLoadedStack(graph, stackDef.label)
-  } else if (preloadedText) {
-    const graph = parseGraph(preloadedText)
     loaded = resolvedGraphToLoadedStack(graph, stackDef.label)
   } else {
     const graph = await loadGraph(baseUrl, stackDef)
@@ -140,7 +146,7 @@ async function importStackDef(
     onProgress,
     fileChecksum,
   )
-  return record.id
+  return { id: record.id, stackCode: loaded.stackCode }
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +181,7 @@ function buildInitialStacks(): StackDef[] {
 
 function AppShell({
   graph,
+  dbStackId,
   stacks,
   activeStackId,
   stackLoadStates,
@@ -196,6 +203,7 @@ function AppShell({
   onClearBackupFolder,
 }: {
   graph: ResolvedGraph
+  dbStackId: string | null
   stacks: StackDef[]
   activeStackId: string
   stackLoadStates: Map<string, StackLoadState>
@@ -224,7 +232,20 @@ function AppShell({
     return m ? decodeURIComponent(m[1]) : ''
   }, [location.pathname])
 
+  const { db: shellDb } = useDb()
   const [showBack, setShowBack] = useState(false)
+  const [isLocked, setIsLocked] = useState(true)
+  const [designMode, setDesignMode] = useState(false)
+
+  const handleFieldChange = useCallback(
+    (nodeHandle: string, fieldKey: string, value: unknown) => {
+      if (!shellDb || !dbStackId) return
+      void updateNodeField(shellDb, dbStackId, nodeHandle, fieldKey, value)
+    },
+    [shellDb, dbStackId],
+  )
+
+  const handleNavigate = useCallback((handle: string) => navigate(`/node/${handle}`), [navigate])
 
   useEffect(() => {
     const m = location.pathname.match(/^\/node\/(.+)$/)
@@ -233,7 +254,16 @@ function AppShell({
     }
   }, [graph.nodeIndex, graph.defaultHandle, navigate])
 
+  const cardRenderValue = {
+    db: shellDb,
+    dbStackId,
+    designMode,
+    onFieldChange: handleFieldChange,
+    onNavigate: handleNavigate,
+  }
+
   return (
+    <CardRenderContext.Provider value={cardRenderValue}>
     <div className="app">
       <header className="app-header">
         <NavBar
@@ -288,6 +318,10 @@ function AppShell({
                 currentHandle={currentHandle}
                 showBack={showBack}
                 onToggleBack={setShowBack}
+                isLocked={isLocked}
+                onToggleLocked={setIsLocked}
+                designMode={designMode}
+                onSetDesignMode={setDesignMode}
               />
             }
           />
@@ -318,6 +352,7 @@ function AppShell({
         </Routes>
       </main>
     </div>
+    </CardRenderContext.Provider>
   )
 }
 
@@ -331,12 +366,20 @@ function CardContent({
   currentHandle,
   showBack,
   onToggleBack,
+  isLocked,
+  onToggleLocked,
+  designMode,
+  onSetDesignMode,
 }: {
   graph: ResolvedGraph
   orderedHandles: string[]
   currentHandle: string
   showBack: boolean
   onToggleBack: (val: boolean) => void
+  isLocked: boolean
+  onToggleLocked: (val: boolean) => void
+  designMode: boolean
+  onSetDesignMode: (val: boolean) => void
 }) {
   const { handle } = useParams<{ handle: string }>()
   const navigate = useNavigate()
@@ -370,12 +413,18 @@ function CardContent({
         nodeIndex={graph.nodeIndex}
         onNavigate={(h) => navigate(`/node/${h}`)}
         showBack={showBack}
+        graph={graph}
+        stackCode={graph.stackCode}
       />
       <CardControls
         orderedHandles={orderedHandles}
         currentHandle={currentHandle}
         showBack={showBack}
         onToggleBack={onToggleBack}
+        isLocked={isLocked}
+        onToggleLocked={onToggleLocked}
+        designMode={designMode}
+        onSetDesignMode={onSetDesignMode}
       />
     </div>
   )
@@ -472,6 +521,13 @@ export function App() {
     setDbProgress(0)
     const t0 = performance.now()
 
+    // Always delete bundled stacks from DB so file updates are picked up on every load.
+    // Bundled stacks are app-controlled content, not user data.
+    for (const builtin of BUILTIN_STACKS) {
+      const existing = await getStackByName(db, builtin.label)
+      if (existing) await deleteStack(db, existing.id)
+    }
+
     // Check for a previously-selected stack in DB (returning user)
     const savedId = await getSelectedStackId(db)
 
@@ -505,7 +561,7 @@ export function App() {
 
     const stackDef = stacks.find((s) => s.id === activeStackId) ?? stacks[0]
     try {
-      const dbStackId = await importStackDef(
+      const { id: dbStackId } = await importStackDef(
         db,
         stackDef,
         import.meta.env.BASE_URL,
@@ -621,19 +677,21 @@ export function App() {
       if (db) {
         // --- Compute checksum for collision detection ---
         let fileChecksum: string | undefined
-        let preloadedText: string | undefined
 
-        if (fileBytes) {
-          fileChecksum = await computeChecksum(fileBytes)
+        // Resolve remote URL to bytes so both ZIP and plain YAML remotes work
+        let resolvedBytes = fileBytes
+        if (resolvedBytes) {
+          fileChecksum = await computeChecksum(resolvedBytes)
         } else if (stackDef.source.type === 'remote') {
           const url = (stackDef.source as { type: 'remote'; url: string }).url
           const resp = await fetch(url)
           if (!resp.ok) throw new LoadError(new Error(`HTTP ${resp.status} ${resp.statusText}`))
-          preloadedText = await resp.text()
-          fileChecksum = await computeChecksum(preloadedText)
+          resolvedBytes = new Uint8Array(await resp.arrayBuffer())
+          fileChecksum = await computeChecksum(resolvedBytes)
         } else if (stackDef.source.type === 'local' && stackDef.source.content) {
           fileChecksum = await computeChecksum(stackDef.source.content)
         }
+        fileBytes = resolvedBytes
 
         // --- Collision check ---
         if (fileChecksum) {
@@ -674,18 +732,17 @@ export function App() {
         // --- Import to DB ---
         setDbProgress(0)
         try {
-          const dbStackId = await importStackDef(
+          const { id: dbStackId, stackCode } = await importStackDef(
             db,
             stackDef,
             import.meta.env.BASE_URL,
             fileBytes,
             (pct) => setDbProgress(pct),
             fileChecksum,
-            preloadedText,
           )
           await setSelectedStack(db, dbStackId)
           const graph = await buildGraphFromDb(db, dbStackId)
-          setGraphState({ status: 'loaded', graph, dbStackId })
+          setGraphState({ status: 'loaded', graph: stackCode ? { ...graph, stackCode } : graph, dbStackId })
           setLoadState(stackDef.id, 'loaded')
         } finally {
           setDbProgress(null)
@@ -847,6 +904,7 @@ export function App() {
     <>
       <AppShell
         graph={graph}
+        dbStackId={graphState.dbStackId}
         stacks={stacks}
         activeStackId={activeStackId}
         stackLoadStates={stackLoadStates}

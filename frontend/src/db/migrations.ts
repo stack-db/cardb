@@ -119,4 +119,8 @@ export const MIGRATIONS: Migration[] = [
     version: 5,
     sql: `DELETE FROM stacks WHERE name IN ('GraphOfThrones', 'MedlinePlus');`,
   },
+  {
+    version: 6,
+    sql: `ALTER TABLE stacks ADD COLUMN IF NOT EXISTS stack_fields JSONB NOT NULL DEFAULT '{}';`,
+  },
 ]

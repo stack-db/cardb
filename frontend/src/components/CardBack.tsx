@@ -46,7 +46,9 @@ export function CardBack({ node, linksByRel, onNavigate }: CardBackProps) {
               <tr key={key} className="card-back__field-row">
                 <td className="card-back__field-key">{key}</td>
                 <td className="card-back__field-val">
-                  {Array.isArray(val) ? val.join(', ') : String(val ?? '')}
+                  {typeof val === 'object' && val !== null
+                    ? JSON.stringify(val)
+                    : String(val ?? '')}
                 </td>
               </tr>
             ))}

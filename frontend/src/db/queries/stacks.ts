@@ -13,6 +13,7 @@ export interface StackRecord {
   firstCardHandle: string | null
   fileChecksum: string | null
   isModified: boolean
+  stackFields: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }
@@ -28,12 +29,13 @@ interface StackRow {
   first_card_handle: string | null
   file_checksum: string | null
   is_modified: boolean
+  stack_fields: Record<string, unknown>
   created_at: string
   updated_at: string
 }
 
 const STACK_COLUMNS =
-  'id, name, source_url, first_card_handle, file_checksum, is_modified, created_at, updated_at'
+  'id, name, source_url, first_card_handle, file_checksum, is_modified, stack_fields, created_at, updated_at'
 
 function mapStackRow(row: StackRow): StackRecord {
   return {
@@ -43,6 +45,7 @@ function mapStackRow(row: StackRow): StackRecord {
     firstCardHandle: row.first_card_handle,
     fileChecksum: row.file_checksum,
     isModified: row.is_modified,
+    stackFields: row.stack_fields ?? {},
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }
@@ -192,14 +195,15 @@ export async function importStack(
   await db.transaction(async (tx) => {
     // --- Stack row ---
     await tx.query(
-      `INSERT INTO stacks (id, name, source_url, first_card_handle, file_checksum)
-       VALUES ($1, $2, $3, $4, $5)`,
+      `INSERT INTO stacks (id, name, source_url, first_card_handle, file_checksum, stack_fields)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
       [
         stackId,
         stack.title,
         sourceUrl ?? null,
         stack.firstCardHandle ?? null,
         fileChecksum ?? null,
+        JSON.stringify(stack.stackFields ?? {}),
       ],
     )
     report(0.02)

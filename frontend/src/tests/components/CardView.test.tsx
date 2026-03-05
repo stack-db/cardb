@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { CardView } from '../../components/CardView'
-import type { NodeData, LinkData } from '../../types'
+import type { NodeData, LinkData, ResolvedGraph } from '../../types'
 
 // TagChips now uses <Link>, so CardView renders need a Router context.
 function wrap(ui: React.ReactElement) {
@@ -35,6 +35,16 @@ const linksByRel = new Map<string, LinkData[]>([
   ['mentions', [{ rel: 'mentions', targetHandle: 'ghost' }]], // ghost not in index
 ])
 
+const graph: ResolvedGraph = {
+  nodeIndex,
+  outgoingLinks: new Map([
+    ['alice', [{ rel: 'knows', targetHandle: 'bob' }, { rel: 'mentions', targetHandle: 'ghost' }]],
+    ['bob', []],
+  ]),
+  defaultHandle: 'alice',
+  orderedHandles: ['alice', 'bob'],
+}
+
 describe('CardView', () => {
   let onNavigate: ReturnType<typeof vi.fn>
 
@@ -49,6 +59,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Alice')
@@ -61,6 +72,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     expect(screen.getByText('person')).toBeTruthy()
@@ -74,6 +86,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     expect(screen.getByText('name')).toBeTruthy()
@@ -88,6 +101,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     const fileRef = screen.getByText('$.headshots/alice.jpg')
@@ -101,6 +115,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     const btn = screen.getByRole('button', { name: 'bob' })
@@ -114,6 +129,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     const ghostSpan = screen.getByText('ghost')
@@ -127,6 +143,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     fireEvent.click(screen.getByRole('button', { name: 'bob' }))
@@ -141,6 +158,7 @@ describe('CardView', () => {
         linksByRel={linksByRel}
         nodeIndex={nodeIndex}
         onNavigate={onNavigate}
+        graph={graph}
       />,
     )
     fireEvent.click(screen.getByText('ghost'))

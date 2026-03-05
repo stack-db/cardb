@@ -25,8 +25,10 @@ export interface RawLink {
 export interface StackYml {
   title?: string
   first_card?: string // '@handle' bare string; optional
+  fields?: Record<string, unknown> // stack-level field defaults
   nodes: RawNode[]
   links?: RawLink[]
+  code?: string | { src: string } // JavaScript function definitions (e.g. onShowCard)
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +72,23 @@ export interface ResolvedGraph {
    * Used for serial First/Prev/Next/Last navigation.
    */
   orderedHandles: string[]
+
+  /**
+   * JavaScript code string from the top-level `code:` field in stack.yml.
+   * May define onShowCard(node, stack, element) for custom card rendering.
+   */
+  stackCode?: string
+
+  /**
+   * Fields defined at the stack level — inherited by all cards as defaults.
+   */
+  stackFields?: Record<string, unknown>
+
+  /**
+   * Maps tag name → the fields of the card whose handle matches that tag.
+   * Cards tagged with a given tag inherit those fields as defaults.
+   */
+  tagCards?: Map<string, Record<string, unknown>>
 }
 
 // ---------------------------------------------------------------------------

@@ -43,6 +43,10 @@ export interface LoadedStack {
   links: ResolvedLink[]
   /** Map of docs-relative path → raw bytes (e.g. "headshots/bob.jpg" → Uint8Array). */
   embeddedFiles: Map<string, Uint8Array>
+  /** JavaScript code string from the top-level `code:` field in stack.yml. */
+  stackCode?: string
+  /** Fields defined at the stack level — inherited by all cards as defaults. */
+  stackFields: Record<string, unknown>
 }
 
 // ---------------------------------------------------------------------------
@@ -50,14 +54,11 @@ export interface LoadedStack {
 // ---------------------------------------------------------------------------
 
 /**
- * Load a .stack archive from raw bytes.
+ * Load a stack from raw bytes — either a .stack ZIP archive or plain YAML text.
  *
- * Steps:
- *   1. Unzip the archive; validate it contains stack.yml at root.
- *   2. Parse stack.yml (YAML 1.2).
- *   3. Pass 1: index all handles and aliases; raise on collision.
- *   4. Pass 2: resolve all @name references in links; raise on unresolved ref.
- *   5. Validate all $.path references against docs/ entries.
+ * Detection: if the bytes start with the ZIP magic number (PK = 0x50 0x4B),
+ * treat as a ZIP archive; otherwise decode as UTF-8 and treat as stack.yml
+ * with an empty docs/ folder.
  *
  * @throws StackArchiveError on invalid ZIP or missing stack.yml
  * @throws StackYamlError on YAML parse failure or schema violation
@@ -65,8 +66,16 @@ export interface LoadedStack {
  * @throws StackUnresolvedRefError on unresolved @name link ref
  * @throws StackMissingFileError on missing $.path file reference
  */
-export async function loadStack(archiveBytes: Uint8Array): Promise<LoadedStack> {
-  // Step 1: Unzip
+export async function loadStack(bytes: Uint8Array): Promise<LoadedStack> {
+  // ZIP magic: first two bytes are 'P' (0x50) and 'K' (0x4B)
+  if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+    return loadStackFromZip(bytes)
+  }
+  // Plain YAML — treat as stack.yml with empty docs/
+  return loadFromYaml(strFromU8(bytes), new Map())
+}
+
+function loadStackFromZip(archiveBytes: Uint8Array): LoadedStack {
   let files: Record<string, Uint8Array>
   try {
     files = unzipSync(archiveBytes)
@@ -88,9 +97,7 @@ export async function loadStack(archiveBytes: Uint8Array): Promise<LoadedStack> 
     }
   }
 
-  // Step 2: Parse YAML
-  const yamlText = strFromU8(files['stack.yml'])
-  return loadFromYaml(yamlText, embeddedFiles)
+  return loadFromYaml(strFromU8(files['stack.yml']), embeddedFiles)
 }
 
 /**
@@ -103,6 +110,33 @@ export async function loadFromYamlString(yamlText: string, title: string): Promi
 
 // ---------------------------------------------------------------------------
 // Internal: parse YAML + run two-pass resolver
+// ---------------------------------------------------------------------------
+// Resolve a code field value (string or {src: '$/...'}) to a string.
+// ---------------------------------------------------------------------------
+
+function resolveCode(
+  code: unknown,
+  embeddedFiles: Map<string, Uint8Array>,
+  context: string,
+): string | undefined {
+  if (typeof code === 'string') return code
+  if (code !== null && typeof code === 'object' && !Array.isArray(code)) {
+    const src = (code as Record<string, unknown>)['src']
+    if (typeof src === 'string' && src.startsWith('$/')) {
+      const filePath = src.slice(2)
+      const fileBytes = embeddedFiles.get(filePath)
+      if (!fileBytes) {
+        throw new StackMissingFileError(
+          filePath,
+          `Missing code source file: "docs/${filePath}" referenced in ${context}`,
+        )
+      }
+      return strFromU8(fileBytes)
+    }
+  }
+  return undefined
+}
+
 // ---------------------------------------------------------------------------
 
 function loadFromYaml(
@@ -150,6 +184,13 @@ function loadFromYaml(
     }
   }
 
+  // Pass 3: Resolve code fields ({src: '$/...'} or plain string) → string
+  const stackCode = resolveCode(yml.code, embeddedFiles, 'top-level code')
+  for (const node of index.orderedNodes) {
+    const resolved = resolveCode(node.fields['code'], embeddedFiles, `node "${node.handle}"`)
+    if (resolved !== undefined) node.fields = { ...node.fields, code: resolved }
+  }
+
   // Determine first card handle
   let firstCardHandle: string | null = null
   if (yml.first_card) {
@@ -162,6 +203,9 @@ function loadFromYaml(
   }
 
   const title = titleOverride ?? yml.title ?? 'Untitled Stack'
+  const stackFields = (typeof yml.fields === 'object' && yml.fields !== null && !Array.isArray(yml.fields))
+    ? (yml.fields as Record<string, unknown>)
+    : {}
 
   return {
     title,
@@ -169,6 +213,77 @@ function loadFromYaml(
     nodes: index.orderedNodes,
     links,
     embeddedFiles,
+    stackCode,
+    stackFields,
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Utility: build tag-card map from a list of nodes
+// ---------------------------------------------------------------------------
+
+/**
+ * A tag card is a node whose handle equals a tag name used anywhere in the stack.
+ * Returns a map of tag name → that card's fields (used as field defaults for
+ * all cards carrying that tag).
+ */
+export function buildTagCards(
+  nodes: { handle: string; fields: Record<string, unknown>; tags: string[] }[],
+): Map<string, Record<string, unknown>> {
+  const allTags = new Set<string>()
+  for (const node of nodes) {
+    for (const tag of node.tags) allTags.add(tag)
+  }
+  const tagCards = new Map<string, Record<string, unknown>>()
+  for (const node of nodes) {
+    if (allTags.has(node.handle)) {
+      tagCards.set(node.handle, node.fields)
+    }
+  }
+  return tagCards
+}
+
+// ---------------------------------------------------------------------------
+// Bridge: LoadedStack → ResolvedGraph
+// Used when a .stack archive has been loaded and the caller needs a ResolvedGraph.
+// ---------------------------------------------------------------------------
+
+export function loadedStackToResolvedGraph(loaded: LoadedStack): ResolvedGraph {
+  const nodeIndex = new Map<string, NodeData>()
+  const orderedHandles: string[] = []
+
+  for (const node of loaded.nodes) {
+    const data: NodeData = {
+      handle: node.handle,
+      aliases: node.aliases,
+      fields: node.fields,
+      tags: node.tags,
+    }
+    nodeIndex.set(node.handle, data)
+    for (const alias of node.aliases) {
+      nodeIndex.set(alias, data)
+    }
+    orderedHandles.push(node.handle)
+  }
+
+  const outgoingLinks = new Map<string, LinkData[]>()
+  for (const handle of orderedHandles) {
+    outgoingLinks.set(handle, [])
+  }
+  for (const link of loaded.links) {
+    const list = outgoingLinks.get(link.source.handle) ?? []
+    list.push({ rel: link.rel, targetHandle: link.target.handle })
+    outgoingLinks.set(link.source.handle, list)
+  }
+
+  return {
+    nodeIndex,
+    outgoingLinks,
+    defaultHandle: loaded.firstCardHandle ?? orderedHandles[0] ?? '',
+    orderedHandles,
+    stackCode: loaded.stackCode,
+    stackFields: loaded.stackFields,
+    tagCards: buildTagCards(loaded.nodes),
   }
 }
 
@@ -218,5 +333,7 @@ export function resolvedGraphToLoadedStack(graph: ResolvedGraph, title: string):
     nodes: resolvedNodes,
     links: resolvedLinks,
     embeddedFiles: new Map(),
+    stackCode: graph.stackCode,
+    stackFields: graph.stackFields ?? {},
   }
 }

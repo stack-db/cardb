@@ -1,6 +1,7 @@
 import { parse as parseYaml } from 'yaml'
 import type { NodeData, LinkData, RawLink, ResolvedGraph, StackYml } from '../types'
 import { LoadError, ParseError } from './errors'
+import { loadStack, loadedStackToResolvedGraph, buildTagCards } from './load'
 
 // ---------------------------------------------------------------------------
 // Pass 1: Build handle index
@@ -151,7 +152,14 @@ export function parseGraph(yamlText: string): ResolvedGraph {
   const outgoingLinks = resolveLinks(yml.links, index)
   const defaultHandle = resolveDefaultHandle(yml, index, firstHandle)
 
-  return { nodeIndex: index, outgoingLinks, defaultHandle, orderedHandles }
+  const stackCode = typeof yml.code === 'string' ? yml.code : undefined
+  const stackFields =
+    typeof yml.fields === 'object' && yml.fields !== null && !Array.isArray(yml.fields)
+      ? (yml.fields as Record<string, unknown>)
+      : {}
+  const nodeList = orderedHandles.map((h) => index.get(h)!)
+  const tagCards = buildTagCards(nodeList)
+  return { nodeIndex: index, outgoingLinks, defaultHandle, orderedHandles, stackCode, stackFields, tagCards }
 }
 
 /**
@@ -175,15 +183,15 @@ export async function loadGraph(
   const url =
     stack.source.type === 'bundled' ? `${baseUrl}${stack.source.filename}` : stack.source.url
 
-  let text: string
   try {
     const res = await fetch(url)
     if (!res.ok) {
       throw new Error(`HTTP ${res.status} ${res.statusText}`)
     }
-    text = await res.text()
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    return loadedStackToResolvedGraph(await loadStack(bytes))
   } catch (err) {
+    if (err instanceof ParseError) throw err
     throw new LoadError(err)
   }
-  return parseGraph(text)
 }

@@ -1,4 +1,5 @@
 import type { Db } from '../index'
+import { markStackModified } from './stacks'
 
 // ---------------------------------------------------------------------------
 // Record types
@@ -141,4 +142,20 @@ export async function searchNodes(db: Db, stackId: string, query: string): Promi
   }
 
   return rows.map((row) => mapNodeRow(row, tagsByNodeId.get(row.id) ?? []))
+}
+
+export async function updateNodeField(
+  db: Db,
+  stackId: string,
+  handle: string,
+  fieldKey: string,
+  value: unknown,
+): Promise<void> {
+  await db.query(
+    `UPDATE nodes
+     SET fields = fields || $1::jsonb, updated_at = now()
+     WHERE stack_id = $2 AND handle = $3`,
+    [JSON.stringify({ [fieldKey]: value }), stackId, handle],
+  )
+  await markStackModified(db, stackId)
 }

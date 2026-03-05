@@ -847,6 +847,11 @@ body {
   margin-top: 1.25rem;
 }
 
+.card-view__custom-front {
+  flex: 1;
+  min-width: 0;
+}
+
 /* -----------------------------------------------------------------------
    Card layout — card + controls side by side
    ----------------------------------------------------------------------- */
@@ -936,6 +941,59 @@ body {
 }
 
 .card-controls__face-btn--active {
+  background: #1a56db;
+  color: #fff;
+}
+
+/* Face section: toggle at full width, lock icon absolutely positioned to the right */
+.card-controls__face-section {
+  position: relative;
+}
+
+.card-controls__lock-btn {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 0.15rem);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.1rem;
+  line-height: 1;
+  transition: color 0.12s;
+}
+
+.card-controls__lock-btn:hover {
+  color: #1a56db;
+}
+
+/* Use / Design toggle (same visual style as face toggle) */
+.card-controls__mode-toggle {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-top: 0.3rem;
+}
+
+.card-controls__mode-btn {
+  background: #f5f5f5;
+  border: none;
+  padding: 0.22rem 0;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: #555;
+  text-align: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.card-controls__mode-btn + .card-controls__mode-btn {
+  border-top: 1px solid #ddd;
+}
+
+.card-controls__mode-btn--active {
   background: #1a56db;
   color: #fff;
 }
@@ -1290,6 +1348,46 @@ a.tag-chip:hover {
 
 .field-empty {
   color: #ccc;
+}
+
+/* Typed field value components */
+
+.field-value--input {
+  width: 100%;
+  font-size: inherit;
+  font-family: inherit;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  padding: 0.15rem 0.3rem;
+  background: #fafafa;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.field-value--input:focus {
+  outline: none;
+  border-color: #1a56db;
+  background: #fff;
+}
+
+.field-value--link {
+  color: #1a56db;
+  text-decoration: none;
+}
+
+.field-value--link:hover {
+  text-decoration: underline;
+}
+
+.field-value--img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.field-value--img-link {
+  display: block;
+  width: fit-content;
 }
 
 /* -----------------------------------------------------------------------
