@@ -46,7 +46,9 @@ function renderValueHtml(fieldName: string, value: unknown): string {
       case 'input':
         return `<input class="field-value--input" type="text" value="${escapeHtml(typed.value)}" />`
       case 'a': {
-        const label = escapeHtml(typed.label ?? fieldName)
+        const label = escapeHtml(
+          typed.label ?? (typed.defaultLabel === 'url' ? typed.value : fieldName),
+        )
         return `<a class="field-value--link" href="${escapeHtml(typed.value)}" target="_blank" rel="noopener noreferrer">${label}</a>`
       }
       case 'markdown':

@@ -20,7 +20,8 @@ export interface InputField {
 export interface LinkField {
   type: 'a'
   value: string // must be a valid absolute URL
-  label?: string // optional label; defaults to field name if absent
+  label?: string // optional label; overrides defaultLabel when present
+  defaultLabel?: 'url' | 'field' // 'url' = show URL as label, 'field' = show field name (default)
   style?: FieldStyle
 }
 
@@ -175,10 +176,13 @@ export function parseTypedField(raw: unknown): TypedField | null {
 
     case 'a': {
       if (typeof value !== 'string' || !isValidUrl(value)) return null
+      const defaultLabel =
+        obj.defaultLabel === 'url' || obj.defaultLabel === 'field' ? obj.defaultLabel : undefined
       return {
         type: 'a',
         value,
         label: typeof obj.label === 'string' ? obj.label : undefined,
+        defaultLabel,
         style,
       }
     }
