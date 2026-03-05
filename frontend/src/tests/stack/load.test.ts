@@ -38,10 +38,14 @@ links:
     expect(stack.nodes).toHaveLength(2)
     expect(stack.nodes[0].handle).toBe('alice')
     expect(stack.nodes[0].tags).toContain('person')
-    expect(stack.links).toHaveLength(1)
+    expect(stack.links).toHaveLength(2)
     expect(stack.links[0].rel).toBe('knows')
     expect(stack.links[0].source.handle).toBe('alice')
     expect(stack.links[0].target.handle).toBe('bob')
+    // reverse link auto-generated (bidirectional default)
+    expect(stack.links[1].rel).toBe('knows')
+    expect(stack.links[1].source.handle).toBe('bob')
+    expect(stack.links[1].target.handle).toBe('alice')
   })
 
   it('throws StackArchiveError for corrupt ZIP (PK header but invalid body)', async () => {

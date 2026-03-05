@@ -143,7 +143,7 @@ export function resolveLinks(
     })
 
     // Generate reverse link for bidirectional links
-    if (raw.bidirectional) {
+    if (raw.bidirectional !== false) {
       resolved.push({
         handle: null,
         aliases: [],
