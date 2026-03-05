@@ -227,6 +227,13 @@ function AppShell({
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Strip ?stack= query param from URL — it was consumed at module load time
+  useEffect(() => {
+    if (window.location.search) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash)
+    }
+  }, [])
+
   const currentHandle = useMemo(() => {
     const m = location.pathname.match(/^\/node\/(.+)$/)
     return m ? decodeURIComponent(m[1]) : ''
