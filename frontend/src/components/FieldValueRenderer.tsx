@@ -80,7 +80,7 @@ function TypedFieldRenderer({ typed, fieldName, nodeHandle }: TypedFieldRenderer
           rel="noopener noreferrer"
           style={style}
         >
-          {typed.label ?? fieldName}
+          {typed.label ?? (typed.defaultLabel === 'url' ? typed.value : fieldName)}
         </a>
       )
 
