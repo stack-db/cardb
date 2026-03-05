@@ -61,5 +61,6 @@ export async function exportStackToMemory(db: Db, stackId: string): Promise<Load
     nodes: resolvedNodes,
     links: resolvedLinks,
     embeddedFiles,
+    stackFields: stackRecord.stackFields,
   }
 }

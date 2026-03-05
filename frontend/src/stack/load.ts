@@ -68,7 +68,7 @@ export interface LoadedStack {
  */
 export async function loadStack(bytes: Uint8Array): Promise<LoadedStack> {
   // ZIP magic: first two bytes are 'P' (0x50) and 'K' (0x4B)
-  if (bytes[0] === 0x50 && bytes[1] === 0x4B) {
+  if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
     return loadStackFromZip(bytes)
   }
   // Plain YAML — treat as stack.yml with empty docs/
@@ -203,9 +203,10 @@ function loadFromYaml(
   }
 
   const title = titleOverride ?? yml.title ?? 'Untitled Stack'
-  const stackFields = (typeof yml.fields === 'object' && yml.fields !== null && !Array.isArray(yml.fields))
-    ? (yml.fields as Record<string, unknown>)
-    : {}
+  const stackFields =
+    typeof yml.fields === 'object' && yml.fields !== null && !Array.isArray(yml.fields)
+      ? (yml.fields as Record<string, unknown>)
+      : {}
 
   return {
     title,

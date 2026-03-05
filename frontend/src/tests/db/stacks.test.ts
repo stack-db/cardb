@@ -27,6 +27,7 @@ const minimal: LoadedStack = {
     },
   ],
   embeddedFiles: new Map(),
+  stackFields: {},
 }
 
 beforeEach(async () => {

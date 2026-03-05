@@ -38,7 +38,13 @@ const linksByRel = new Map<string, LinkData[]>([
 const graph: ResolvedGraph = {
   nodeIndex,
   outgoingLinks: new Map([
-    ['alice', [{ rel: 'knows', targetHandle: 'bob' }, { rel: 'mentions', targetHandle: 'ghost' }]],
+    [
+      'alice',
+      [
+        { rel: 'knows', targetHandle: 'bob' },
+        { rel: 'mentions', targetHandle: 'ghost' },
+      ],
+    ],
     ['bob', []],
   ]),
   defaultHandle: 'alice',

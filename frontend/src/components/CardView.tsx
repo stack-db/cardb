@@ -1,14 +1,23 @@
 import { useRef, useEffect, useMemo } from 'react'
 import { marked } from 'marked'
 import type { NodeData, LinkData, ResolvedGraph } from '../types'
-import { parseTypedField, extractFileRefPath, getEffectiveFields, isDisplayableField } from '../fieldTypes'
+import {
+  parseTypedField,
+  extractFileRefPath,
+  getEffectiveFields,
+  isDisplayableField,
+} from '../fieldTypes'
 import { CardBack } from './CardBack'
 import { FieldList } from './FieldList'
 import { LinkGroup } from './LinkGroup'
 import { TagChips } from './TagChips'
 
 function renderMarkdown(text: unknown): string {
-  if (typeof text === 'object' && text !== null && (text as Record<string, unknown>)['type'] === 'markdown') {
+  if (
+    typeof text === 'object' &&
+    text !== null &&
+    (text as Record<string, unknown>)['type'] === 'markdown'
+  ) {
     text = (text as Record<string, unknown>)['value'] ?? ''
   }
   return marked.parse(String(text ?? ''), { async: false }) as string
@@ -166,7 +175,7 @@ export function CardView({
 
   // Extract stack's onShowCard function, memoized per stackCode
   const stackOnShowCard = useMemo<((...args: unknown[]) => void) | null>(() => {
-if (!stackCode?.includes('onShowCard')) return null
+    if (!stackCode?.includes('onShowCard')) return null
     try {
       // eslint-disable-next-line no-new-func
       return new Function(

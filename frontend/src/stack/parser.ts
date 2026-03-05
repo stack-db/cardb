@@ -159,7 +159,15 @@ export function parseGraph(yamlText: string): ResolvedGraph {
       : {}
   const nodeList = orderedHandles.map((h) => index.get(h)!)
   const tagCards = buildTagCards(nodeList)
-  return { nodeIndex: index, outgoingLinks, defaultHandle, orderedHandles, stackCode, stackFields, tagCards }
+  return {
+    nodeIndex: index,
+    outgoingLinks,
+    defaultHandle,
+    orderedHandles,
+    stackCode,
+    stackFields,
+    tagCards,
+  }
 }
 
 /**

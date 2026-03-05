@@ -19,15 +19,15 @@ export interface InputField {
 
 export interface LinkField {
   type: 'a'
-  value: string   // must be a valid absolute URL
-  label?: string  // optional label; defaults to field name if absent
+  value: string // must be a valid absolute URL
+  label?: string // optional label; defaults to field name if absent
   style?: FieldStyle
 }
 
 export interface ImgField {
   type: 'img'
-  value: string   // valid URL, or "$." / "$/" embedded-file reference
-  href?: string   // optional navigation target: absolute URL or "@handle"
+  value: string // valid URL, or "$." / "$/" embedded-file reference
+  href?: string // optional navigation target: absolute URL or "@handle"
   style?: FieldStyle
 }
 
