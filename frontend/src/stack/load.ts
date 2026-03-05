@@ -262,7 +262,11 @@ export function loadedStackToResolvedGraph(loaded: LoadedStack): ResolvedGraph {
   for (const handle of orderedHandles) {
     outgoingLinks.set(handle, [])
   }
+  const seenLinks = new Set<string>()
   for (const link of loaded.links) {
+    const key = `${link.source.handle}\0${link.target.handle}\0${link.rel}`
+    if (seenLinks.has(key)) continue
+    seenLinks.add(key)
     const list = outgoingLinks.get(link.source.handle) ?? []
     list.push({ rel: link.rel, targetHandle: link.target.handle })
     outgoingLinks.set(link.source.handle, list)

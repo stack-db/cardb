@@ -28,6 +28,8 @@ export interface RawYmlLink {
   rel?: string
   fields?: Record<string, unknown>
   tags?: string[]
+  bidirectional?: boolean
+  'reverse-rel'?: string
 }
 
 export interface RawYml {
@@ -139,6 +141,19 @@ export function resolveLinks(
       fields: raw.fields ?? {},
       tags: raw.tags ?? [],
     })
+
+    // Generate reverse link for bidirectional links
+    if (raw.bidirectional) {
+      resolved.push({
+        handle: null,
+        aliases: [],
+        source: targetNode,
+        target: sourceNode,
+        rel: raw['reverse-rel'] ?? raw.rel ?? 'related',
+        fields: raw.fields ?? {},
+        tags: raw.tags ?? [],
+      })
+    }
   }
 
   return resolved

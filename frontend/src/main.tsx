@@ -51,6 +51,8 @@ async function resetDb() {
   // the OPFS leader lock when the new page's worker tries to acquire it.
   const { terminateDbWorker } = await import('./db/index')
   terminateDbWorker()
+  // Navigate to root so the app loads the default (About) stack's first card
+  window.location.hash = '#/'
   location.reload()
 }
 

@@ -97,10 +97,14 @@ async function buildGraphFromDb(db: Db, dbStackId: string): Promise<ResolvedGrap
     outgoingLinks.set(handle, [])
   }
 
+  const seenLinks = new Set<string>()
   for (const link of links) {
     const sourceNode = nodeById.get(link.sourceId)
     const targetNode = nodeById.get(link.targetId)
     if (!sourceNode || !targetNode) continue
+    const key = `${sourceNode.handle}\0${targetNode.handle}\0${link.rel}`
+    if (seenLinks.has(key)) continue
+    seenLinks.add(key)
     const list = outgoingLinks.get(sourceNode.handle) ?? []
     list.push({ rel: link.rel, targetHandle: targetNode.handle })
     outgoingLinks.set(sourceNode.handle, list)
@@ -679,6 +683,8 @@ export function App() {
   async function loadStackDef(stackDef: StackDef, fileBytes?: Uint8Array) {
     setLoadState(stackDef.id, 'loading')
     setActiveStackId(stackDef.id)
+    // Navigate to root so the "/" route redirects to the new stack's defaultHandle
+    window.location.hash = '#/'
 
     try {
       if (db) {
