@@ -33,6 +33,7 @@ export interface RawYmlLink {
 }
 
 export interface RawYml {
+  version?: string
   title?: string
   first_card?: string
   fields?: Record<string, unknown>
@@ -168,7 +169,7 @@ export function isFileRef(value: unknown): value is string {
   return typeof value === 'string' && (value.startsWith('$.') || value.startsWith('$/'))
 }
 
-/** Given a file reference string (e.g. "$.headshots/bob.jpg" or "$/headshots/bob.jpg"), returns the docs-relative path. */
+/** Given a file reference string (e.g. "$.headshots/bob.jpg" or "$/headshots/bob.jpg"), returns the pack-relative path. */
 export function resolveFileRef(ref: string): string {
   if (!isFileRef(ref)) {
     throw new TypeError(`Not a valid file reference: "${ref}"`)

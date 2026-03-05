@@ -71,7 +71,7 @@ export class StackUnresolvedRefError extends StackError {
   }
 }
 
-/** Thrown when a $.path file reference is not present in docs/. */
+/** Thrown when a $.path file reference is not present in pack/. */
 export class StackMissingFileError extends StackError {
   constructor(
     public readonly filePath: string,

@@ -1,6 +1,6 @@
 /**
  * Serialize a LoadedStack to a .stack ZIP archive Blob.
- * Produces a valid .stack archive with stack.yml at root + docs/ embedded files.
+ * Produces a valid .stack archive with stack.yml at root + pack/ embedded files.
  *
  * Spec ref: 007-stack-format
  */
@@ -43,16 +43,16 @@ export async function serializeStack(stack: LoadedStack, title?: string): Promis
     const data = stack.embeddedFiles.get(path)
     if (!data) {
       throw new StackSerializationError(
-        `Missing embedded file: "docs/${path}" is referenced in the stack but not available`,
+        `Missing embedded file: "pack/${path}" is referenced in the stack but not available`,
       )
     }
-    entries[`docs/${path}`] = data
+    entries[`pack/${path}`] = data
   }
 
   // Include all embedded files even if not referenced (future-proof)
   for (const [path, data] of stack.embeddedFiles) {
-    if (!entries[`docs/${path}`]) {
-      entries[`docs/${path}`] = data
+    if (!entries[`pack/${path}`]) {
+      entries[`pack/${path}`] = data
     }
   }
 
@@ -87,7 +87,7 @@ function buildYml(stack: LoadedStack, title: string): Record<string, unknown> {
     return obj
   })
 
-  const yml: Record<string, unknown> = { title }
+  const yml: Record<string, unknown> = { version: '0.1', title }
 
   if (stack.firstCardHandle) {
     yml['first_card'] = `@${stack.firstCardHandle}`

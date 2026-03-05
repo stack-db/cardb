@@ -64,7 +64,7 @@ function parseStyle(raw: unknown): FieldStyle | undefined {
 
 /**
  * If the string is a "$." or "$/" embedded-file reference, returns the
- * docs-relative path (without prefix). Otherwise returns null.
+ * pack-relative path (without prefix). Otherwise returns null.
  */
 export function extractFileRefPath(value: string): string | null {
   if (value.startsWith('$.')) return value.slice(2)

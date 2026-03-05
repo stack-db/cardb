@@ -36,7 +36,7 @@ export interface LoadedStack {
   firstCardHandle: string | null
   nodes: NodeData[]
   links: ResolvedLink[]
-  /** Map of docs-relative path → raw bytes (e.g. "headshots/bob.jpg" → Uint8Array). */
+  /** Map of pack-relative path → raw bytes (e.g. "headshots/bob.jpg" → Uint8Array). */
   embeddedFiles: Map<string, Uint8Array>
   /** JavaScript code string from the top-level `code:` field in stack.yml. */
   stackCode?: string
@@ -53,7 +53,7 @@ export interface LoadedStack {
  *
  * Detection: if the bytes start with the ZIP magic number (PK = 0x50 0x4B),
  * treat as a ZIP archive; otherwise decode as UTF-8 and treat as stack.yml
- * with an empty docs/ folder.
+ * with an empty pack/ folder.
  *
  * @throws StackArchiveError on invalid ZIP or missing stack.yml
  * @throws StackYamlError on YAML parse failure or schema violation
@@ -66,7 +66,7 @@ export async function loadStack(bytes: Uint8Array): Promise<LoadedStack> {
   if (bytes[0] === 0x50 && bytes[1] === 0x4b) {
     return loadStackFromZip(bytes)
   }
-  // Plain YAML — treat as stack.yml with empty docs/
+  // Plain YAML — treat as stack.yml with empty pack/
   return loadFromYaml(strFromU8(bytes), new Map())
 }
 
@@ -84,11 +84,11 @@ function loadStackFromZip(archiveBytes: Uint8Array): LoadedStack {
     throw new StackArchiveError('stack.yml not found at archive root')
   }
 
-  // Collect embedded files from docs/ folder
+  // Collect embedded files from pack/ folder
   const embeddedFiles = new Map<string, Uint8Array>()
   for (const [path, data] of Object.entries(files)) {
-    if (path.startsWith('docs/') && !path.endsWith('/')) {
-      embeddedFiles.set(path.slice('docs/'.length), data)
+    if (path.startsWith('pack/') && !path.endsWith('/')) {
+      embeddedFiles.set(path.slice('pack/'.length), data)
     }
   }
 
@@ -124,7 +124,7 @@ function resolveCode(
       if (!fileBytes) {
         throw new StackMissingFileError(
           filePath,
-          `Missing code source file: "docs/${filePath}" referenced in ${context}`,
+          `Missing code source file: "pack/${filePath}" referenced in ${context}`,
         )
       }
       return strFromU8(fileBytes)
@@ -174,7 +174,7 @@ function loadFromYaml(
         if (!embeddedFiles.has(path)) {
           throw new StackMissingFileError(
             path,
-            `Missing embedded file: "docs/${path}" referenced in node "${node.handle}"`,
+            `Missing embedded file: "pack/${path}" referenced in node "${node.handle}"`,
           )
         }
       }

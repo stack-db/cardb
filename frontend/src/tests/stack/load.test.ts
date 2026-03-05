@@ -104,7 +104,7 @@ nodes:
     expect(stack.firstCardHandle).toBe('bob')
   })
 
-  it('collects embedded files from docs/', async () => {
+  it('collects embedded files from pack/', async () => {
     const png = new Uint8Array([137, 80, 78, 71]) // PNG magic bytes
     const yaml = `
 nodes:
@@ -112,7 +112,7 @@ nodes:
     fields:
       photo: '$.headshots/alice.png'
 `
-    const bytes = makeStack(yaml, { 'docs/headshots/alice.png': png })
+    const bytes = makeStack(yaml, { 'pack/headshots/alice.png': png })
     const stack = await loadStack(bytes)
     expect(stack.embeddedFiles.has('headshots/alice.png')).toBe(true)
   })
@@ -133,7 +133,7 @@ nodes:
     expect(stack.nodes[0].fields['code'] as string).toContain('onShowCard')
   })
 
-  it('resolves code: {src} to file content from docs/', async () => {
+  it('resolves code: {src} to file content from pack/', async () => {
     const script = 'function onShowCard(node, stack, element) { element.innerHTML = "Hi" }'
     const yaml = `
 nodes:
@@ -142,7 +142,7 @@ nodes:
       code:
         src: '$/script.js'
 `
-    const bytes = makeStack(yaml, { 'docs/script.js': strToU8(script) })
+    const bytes = makeStack(yaml, { 'pack/script.js': strToU8(script) })
     const stack = await loadStack(bytes)
     expect(stack.nodes[0].fields['code']).toBe(script)
   })
