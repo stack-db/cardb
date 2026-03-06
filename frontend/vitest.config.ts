@@ -4,11 +4,34 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'node',
     globals: true,
     pool: 'forks',
     testTimeout: 15000,
     setupFiles: ['src/tests/setup.ts'],
-    environmentMatchGlobs: [['src/tests/components/**/*.test.tsx', 'happy-dom']],
+    projects: [
+      {
+        test: {
+          name: 'node',
+          environment: 'node',
+          globals: true,
+          pool: 'forks',
+          testTimeout: 15000,
+          setupFiles: ['src/tests/setup.ts'],
+          include: ['src/tests/**/*.test.ts'],
+        },
+      },
+      {
+        plugins: [react()],
+        test: {
+          name: 'happy-dom',
+          environment: 'happy-dom',
+          globals: true,
+          pool: 'forks',
+          testTimeout: 15000,
+          setupFiles: ['src/tests/setup.ts'],
+          include: ['src/tests/components/**/*.test.tsx'],
+        },
+      },
+    ],
   },
 })

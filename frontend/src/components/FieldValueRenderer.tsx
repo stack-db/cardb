@@ -160,7 +160,20 @@ function useEmbeddedFileUrl(path: string | null): string | null {
     )
       .then(({ rows }) => {
         if (rows[0]?.data) {
-          objectUrl = URL.createObjectURL(new Blob([rows[0].data.buffer as ArrayBuffer]))
+          const ext = path!.split('.').pop()?.toLowerCase() ?? ''
+          const mime: Record<string, string> = {
+            svg: 'image/svg+xml',
+            png: 'image/png',
+            jpg: 'image/jpeg',
+            jpeg: 'image/jpeg',
+            webp: 'image/webp',
+            gif: 'image/gif',
+          }
+          objectUrl = URL.createObjectURL(
+            new Blob([rows[0].data.buffer as ArrayBuffer], {
+              type: mime[ext] ?? 'application/octet-stream',
+            }),
+          )
           setUrl(objectUrl)
         }
       })
