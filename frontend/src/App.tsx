@@ -283,94 +283,94 @@ function AppShell({
             under construction
           </div>
         )}
-      <div className="app">
-        <header className="app-header">
-          <NavBar
-            graph={graph}
-            stacks={stacks}
-            activeStackId={activeStackId}
-            stackPaneOpen={stackPaneOpen}
-            onToggleStackPane={onToggleStackPane}
-            onSelectStack={onSelectStack}
-            modifiedStackNames={modifiedStackNames}
-            onBackup={onBackup}
-          />
-        </header>
+        <div className="app">
+          <header className="app-header">
+            <NavBar
+              graph={graph}
+              stacks={stacks}
+              activeStackId={activeStackId}
+              stackPaneOpen={stackPaneOpen}
+              onToggleStackPane={onToggleStackPane}
+              onSelectStack={onSelectStack}
+              modifiedStackNames={modifiedStackNames}
+              onBackup={onBackup}
+            />
+          </header>
 
-        {/* Non-blocking DB status indicator */}
-        {(dbStatus === 'initializing' || dbProgress !== null) && (
-          <div className="db-status-bar" aria-live="polite">
-            {dbProgress !== null ? (
-              <>
-                <span className="db-status-bar__label">Data loading…</span>
-                <div className="db-status-bar__track">
-                  <div
-                    className="db-status-bar__fill"
-                    style={{ width: `${Math.round(dbProgress * 100)}%` }}
+          {/* Non-blocking DB status indicator */}
+          {(dbStatus === 'initializing' || dbProgress !== null) && (
+            <div className="db-status-bar" aria-live="polite">
+              {dbProgress !== null ? (
+                <>
+                  <span className="db-status-bar__label">Data loading…</span>
+                  <div className="db-status-bar__track">
+                    <div
+                      className="db-status-bar__fill"
+                      style={{ width: `${Math.round(dbProgress * 100)}%` }}
+                    />
+                  </div>
+                  <span className="db-status-bar__pct">{Math.round(dbProgress * 100)}%</span>
+                </>
+              ) : (
+                <>
+                  <span className="db-status-bar__dot" />
+                  Initializing local database…
+                </>
+              )}
+            </div>
+          )}
+          {dbStatus === 'error' && (
+            <div className="db-status-bar db-status-bar--error" aria-live="polite">
+              Local database unavailable — changes won't be saved
+            </div>
+          )}
+
+          <main className="app-main">
+            <Routes>
+              <Route path="/" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
+              <Route
+                path="/node/:handle"
+                element={
+                  <CardContent
+                    graph={graph}
+                    orderedHandles={graph.orderedHandles}
+                    currentHandle={currentHandle}
+                    showBack={showBack}
+                    onToggleBack={setShowBack}
+                    isLocked={isLocked}
+                    onToggleLocked={setIsLocked}
+                    designMode={designMode}
+                    onSetDesignMode={setDesignMode}
                   />
-                </div>
-                <span className="db-status-bar__pct">{Math.round(dbProgress * 100)}%</span>
-              </>
-            ) : (
-              <>
-                <span className="db-status-bar__dot" />
-                Initializing local database…
-              </>
-            )}
-          </div>
-        )}
-        {dbStatus === 'error' && (
-          <div className="db-status-bar db-status-bar--error" aria-live="polite">
-            Local database unavailable — changes won't be saved
-          </div>
-        )}
-
-        <main className="app-main">
-          <Routes>
-            <Route path="/" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
-            <Route
-              path="/node/:handle"
-              element={
-                <CardContent
-                  graph={graph}
-                  orderedHandles={graph.orderedHandles}
-                  currentHandle={currentHandle}
-                  showBack={showBack}
-                  onToggleBack={setShowBack}
-                  isLocked={isLocked}
-                  onToggleLocked={setIsLocked}
-                  designMode={designMode}
-                  onSetDesignMode={setDesignMode}
-                />
-              }
-            />
-            <Route path="/tag" element={<TagIndex graph={graph} />} />
-            <Route path="/tag/:tagname" element={<TagView graph={graph} />} />
-            <Route
-              path="/stacks"
-              element={
-                <StacksPage
-                  stacks={stacks}
-                  activeStackId={activeStackId}
-                  stackLoadStates={stackLoadStates}
-                  onSelectStack={onSelectStack}
-                  onAddLocalFile={onAddLocalFile}
-                  onAddLocalYaml={onAddLocalYaml}
-                  onAddRemote={onAddRemote}
-                  onRemoveStack={onRemoveStack}
-                  onExportStack={onExportStack}
-                  modifiedStackNames={modifiedStackNames}
-                  backupFolderName={backupFolderName}
-                  lastBackupTime={lastBackupTime}
-                  onChooseBackupFolder={onChooseBackupFolder}
-                  onClearBackupFolder={onClearBackupFolder}
-                />
-              }
-            />
-            <Route path="*" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
-          </Routes>
-        </main>
-      </div>
+                }
+              />
+              <Route path="/tag" element={<TagIndex graph={graph} />} />
+              <Route path="/tag/:tagname" element={<TagView graph={graph} />} />
+              <Route
+                path="/stacks"
+                element={
+                  <StacksPage
+                    stacks={stacks}
+                    activeStackId={activeStackId}
+                    stackLoadStates={stackLoadStates}
+                    onSelectStack={onSelectStack}
+                    onAddLocalFile={onAddLocalFile}
+                    onAddLocalYaml={onAddLocalYaml}
+                    onAddRemote={onAddRemote}
+                    onRemoveStack={onRemoveStack}
+                    onExportStack={onExportStack}
+                    modifiedStackNames={modifiedStackNames}
+                    backupFolderName={backupFolderName}
+                    lastBackupTime={lastBackupTime}
+                    onChooseBackupFolder={onChooseBackupFolder}
+                    onClearBackupFolder={onClearBackupFolder}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
+            </Routes>
+          </main>
+        </div>
       </div>
     </CardRenderContext.Provider>
   )
