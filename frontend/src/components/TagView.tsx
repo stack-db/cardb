@@ -30,6 +30,11 @@ export function TagView({ graph }: TagViewProps) {
           <span className="tag-view__count">
             {nodes.length.toLocaleString()} {nodes.length === 1 ? 'node' : 'nodes'}
           </span>
+          {graph.nodeIndex.has(tag) && (
+            <Link to={`/node/${encodeURIComponent(tag)}`} className="link-group__target">
+              {tag}
+            </Link>
+          )}
         </div>
       </div>
 
