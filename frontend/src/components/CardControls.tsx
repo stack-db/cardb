@@ -39,15 +39,22 @@ export function CardControls({
             className={`card-controls__face-btn${!showBack ? ' card-controls__face-btn--active' : ''}`}
             onClick={() => onToggleBack(false)}
             aria-pressed={!showBack}
+            title="Show card front"
           >
-            Front
+            <div className="card-face-icon card-face-icon--front">
+              <i className="fa-regular fa-user" aria-hidden="true" />
+            </div>
           </button>
           <button
             className={`card-controls__face-btn${showBack ? ' card-controls__face-btn--active' : ''}`}
             onClick={() => onToggleBack(true)}
             aria-pressed={showBack}
+            title="Show card back"
           >
-            Back
+            <i
+              className="fa-regular fa-credit-card card-face-icon card-face-icon--back"
+              aria-hidden="true"
+            />
           </button>
         </div>
         <button
