@@ -83,7 +83,7 @@ export function StacksPage({
       onAddLocalYaml(label, content)
     }
     e.target.value = ''
-    navigate(-1)
+    navigate('/')
   }
 
   const handleFetchRemote = async () => {
@@ -113,7 +113,7 @@ export function StacksPage({
       setRemoteUrl('')
       setRemoteLabel('')
       setAddingRemote(false)
-      navigate(-1)
+      navigate('/')
     } catch (err) {
       setRemoteError(err instanceof Error ? err.message : 'Failed to load stack')
     } finally {

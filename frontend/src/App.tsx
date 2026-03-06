@@ -113,7 +113,7 @@ async function buildGraphFromDb(db: Db, dbStackId: string): Promise<ResolvedGrap
   const nodeList = orderedHandles.map((h) => nodeIndex.get(h)!)
   const stackFields = stackRecord?.stackFields ?? {}
   const tagCards = buildTagCards(nodeList)
-  const defaultHandle = orderedHandles[0] ?? ''
+  const defaultHandle = stackRecord?.firstCardHandle ?? orderedHandles[0] ?? ''
   return { nodeIndex, outgoingLinks, defaultHandle, orderedHandles, stackFields, tagCards }
 }
 
@@ -245,6 +245,7 @@ function AppShell({
 
   const { db: shellDb } = useDb()
   const [showBack, setShowBack] = useState(false)
+  const [hideRibbon, setHideRibbon] = useState(false)
   const [isLocked, setIsLocked] = useState(true)
   const [designMode, setDesignMode] = useState(false)
 
@@ -275,6 +276,13 @@ function AppShell({
 
   return (
     <CardRenderContext.Provider value={cardRenderValue}>
+      <div className="ribbon-container">
+        {!hideRibbon && (
+          <div className="corner-ribbon" onClick={() => setHideRibbon(true)}>
+            <i className="fa-solid fa-person-digging" style={{ marginRight: '0.5rem' }} />
+            under construction
+          </div>
+        )}
       <div className="app">
         <header className="app-header">
           <NavBar
@@ -362,6 +370,7 @@ function AppShell({
             <Route path="*" element={<Navigate to={`/node/${graph.defaultHandle}`} replace />} />
           </Routes>
         </main>
+      </div>
       </div>
     </CardRenderContext.Provider>
   )
@@ -683,8 +692,6 @@ export function App() {
   async function loadStackDef(stackDef: StackDef, fileBytes?: Uint8Array) {
     setLoadState(stackDef.id, 'loading')
     setActiveStackId(stackDef.id)
-    // Navigate to root so the "/" route redirects to the new stack's defaultHandle
-    window.location.hash = '#/'
 
     try {
       if (db) {
@@ -738,6 +745,7 @@ export function App() {
             await setSelectedStack(db, existing.id)
             setGraphState({ status: 'loaded', graph, dbStackId: existing.id })
             setLoadState(stackDef.id, 'loaded')
+            window.location.hash = `#/node/${encodeURIComponent(graph.defaultHandle)}`
             return
           }
         }
@@ -761,6 +769,7 @@ export function App() {
             dbStackId,
           })
           setLoadState(stackDef.id, 'loaded')
+          window.location.hash = `#/node/${encodeURIComponent(graph.defaultHandle)}`
         } finally {
           setDbProgress(null)
         }

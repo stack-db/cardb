@@ -1605,3 +1605,28 @@ a.tag-chip:hover {
     min-width: 5rem;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Under-construction ribbon
+   --------------------------------------------------------------------------- */
+
+.ribbon-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.corner-ribbon {
+  width: 350px;
+  background: #f7f429;
+  text-align: center;
+  padding: 8px 0;
+  position: absolute;
+  border: 3px dashed;
+  top: 60px;
+  right: -80px;
+  transform: rotate(45deg);
+  font-weight: bold;
+  z-index: 1000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
