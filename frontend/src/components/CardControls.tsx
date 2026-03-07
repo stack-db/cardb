@@ -32,7 +32,17 @@ export function CardControls({
 
   return (
     <div className="card-controls">
-      {/* Front / Back toggle + lock */}
+      {/* Lock button — sits outside face-section so it can be reordered on mobile */}
+      <button
+        className="card-controls__lock-btn"
+        onClick={() => onToggleLocked(!isLocked)}
+        title={isLocked ? 'Locked — click to unlock' : 'Unlocked — click to lock'}
+        aria-label={isLocked ? 'Locked' : 'Unlocked'}
+      >
+        <i className={`fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}`} aria-hidden="true" />
+      </button>
+
+      {/* Front / Back toggle */}
       <div className="card-controls__face-section">
         <div className="card-controls__face-toggle" role="group" aria-label="Card face">
           <button
@@ -57,14 +67,6 @@ export function CardControls({
             />
           </button>
         </div>
-        <button
-          className="card-controls__lock-btn"
-          onClick={() => onToggleLocked(!isLocked)}
-          title={isLocked ? 'Locked — click to unlock' : 'Unlocked — click to lock'}
-          aria-label={isLocked ? 'Locked' : 'Unlocked'}
-        >
-          <i className={`fa-solid ${isLocked ? 'fa-lock' : 'fa-lock-open'}`} aria-hidden="true" />
-        </button>
       </div>
 
       {/* Use / Design mode toggle (only when unlocked) */}
