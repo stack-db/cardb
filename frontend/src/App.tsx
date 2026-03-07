@@ -245,7 +245,12 @@ function AppShell({
 
   const { db: shellDb } = useDb()
   const [showBack, setShowBack] = useState(false)
-  const [hideRibbon, setHideRibbon] = useState(false)
+  const [hideRibbon, setHideRibbon] = useState(() => {
+    const match = document.cookie.split('; ').find((c) => c.startsWith('ribbon_hidden_at='))
+    if (!match) return false
+    const ts = parseInt(match.split('=')[1], 10)
+    return Date.now() - ts < 15 * 60 * 1000
+  })
   const [isLocked, setIsLocked] = useState(true)
   const [designMode, setDesignMode] = useState(false)
 
@@ -278,7 +283,13 @@ function AppShell({
     <CardRenderContext.Provider value={cardRenderValue}>
       <div className="ribbon-container">
         {!hideRibbon && (
-          <div className="corner-ribbon" onClick={() => setHideRibbon(true)}>
+          <div
+            className="corner-ribbon"
+            onClick={() => {
+              document.cookie = `ribbon_hidden_at=${Date.now()}; path=/; domain=${window.location.hostname}; max-age=${60 * 60}`
+              setHideRibbon(true)
+            }}
+          >
             <i className="fa-solid fa-person-digging" style={{ marginRight: '0.5rem' }} />
             under construction
           </div>
